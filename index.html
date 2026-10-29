@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhà thông minh</title>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<style>
+  :root {
+    --paper: #EDF0EA;
+    --card: #F8FAF6;
+    --ink: #1B2B2F;
+    --muted: #5E6F72;
+    --line: #C9D1CB;
+    --lamp: #F0B33C;
+    --live: #1E8C7E;
+    --hot: #D0453B;
+    --warm: #C77D12;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  h1 { font-size: 1.6rem; margin: 0; font-weight: 700; letter-spacing: -0.01em; flex: 1; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px; background: var(--card);
+    border: 1px solid var(--line); font-size: 0.9rem;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .pill.on .dot { background: var(--live); }
+  .pill.wait .dot { background: var(--lamp); }
+  .pill.off .dot { background: var(--hot); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .ghost {
+    min-height: 40px; padding: 0 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--card);
+  }
+  .ghost:hover { border-color: var(--ink); }
+  :focus-visible { outline: 3px solid var(--live); outline-offset: 2px; }
+
+  #settings { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  #settings.open { display: block; }
+  #settings label { display: block; font-size: 0.9rem; color: var(--muted); margin: 8px 0 4px; }
+  #settings input {
+    width: 100%; min-height: 42px; padding: 0 10px; font: inherit;
+    border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+  }
+  #settings .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  #settings .save { min-height: 42px; padding: 0 18px; border-radius: 10px; border: 0; background: var(--ink); color: var(--paper); font-weight: 600; }
+  #settings small { color: var(--muted); }
+
+  #notice {
+    display: none; margin-bottom: 14px; padding: 10px 14px; border-radius: 10px;
+    background: #FBEED0; border: 1px solid #E5C77A; font-size: 0.95rem;
+  }
+  #notice.show { display: block; }
+
+  .layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 820px) { .layout { grid-template-columns: 1.05fr 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 650; }
+
+  /* Mặt bằng ngôi nhà */
+  svg { width: 100%; height: auto; display: block; }
+  .wall { fill: none; stroke: var(--ink); stroke-width: 3; }
+  .gap { fill: var(--card); }
+  .halo { fill: var(--lamp); opacity: 0; transition: opacity .25s; }
+  .core { fill: #D8DDD6; stroke: var(--muted); stroke-width: 1.5; transition: fill .25s; }
+  .lamp.on .halo { opacity: .42; }
+  .lamp.on .core { fill: var(--lamp); stroke: var(--warm); }
+  .ring { fill: none; stroke: var(--live); stroke-width: 2.5; stroke-dasharray: 5 4; opacity: 0; }
+  .lamp.here .ring { opacity: 1; }
+  .tag { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+  .temp { font-size: 34px; font-weight: 700; text-anchor: middle; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .temp.warm { fill: var(--warm); }
+  .temp.hot { fill: var(--hot); }
+  .unit { font-size: 12px; fill: var(--muted); text-anchor: middle; }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 0.9rem; }
+  .chip.run { background: #D9EEEA; border-color: var(--live); }
+  .chip.alert { background: #F6D9D5; border-color: var(--hot); }
+
+  /* Điều khiển từng cửa */
+  .door { padding: 12px 0; border-top: 1px solid var(--line); }
+  .door:first-of-type { border-top: 0; padding-top: 0; }
+  .door .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .door b { font-size: 1rem; }
+  .door .info { font-size: 0.88rem; color: var(--muted); text-align: right; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
+  .seg button { min-height: 46px; border: 0; background: transparent; border-left: 1px solid var(--line); }
+  .seg button:first-child { border-left: 0; }
+  .seg button:hover { background: #E1E6DE; }
+  .seg button.active { background: var(--ink); color: var(--paper); font-weight: 600; }
+  .hint { margin: 10px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px;
+    opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw;
+  }
+  #toast.show { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Nhà thông minh</h1>
+    <span class="pill wait" id="conn"><span class="dot"></span><span id="connText">Đang kết nối…</span></span>
+    <button class="ghost" id="gear" aria-expanded="false" aria-controls="settings">Cài đặt</button>
+  </header>
+
+  <section id="settings">
+    <label for="baseIn">Tiền tố topic (phải giống BASE trong bridge.py)</label>
+    <input id="baseIn" autocomplete="off" spellcheck="false">
+    <label for="brokerIn">Địa chỉ broker (WebSocket)</label>
+    <input id="brokerIn" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button class="save" id="saveBtn">Lưu và kết nối lại</button>
+      <small>Broker công cộng ai cũng đọc được topic, hãy đặt tiền tố riêng của bạn.</small>
+    </div>
+  </section>
+
+  <div id="notice" role="status"></div>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Mặt bằng ngôi nhà</h2>
+      <svg viewBox="0 0 320 240" role="img" aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn">
+        <rect class="wall" x="40" y="30" width="240" height="180" rx="6"/>
+        <rect class="gap" x="142" y="26" width="36" height="8"/>
+        <rect class="gap" x="146" y="206" width="36" height="8" transform="translate(-4 0)"/>
+        <rect class="gap" x="36" y="102" width="8" height="36"/>
+        <rect class="gap" x="276" y="102" width="8" height="36"/>
+
+        <g class="lamp" id="lamp0" transform="translate(160 54)">
+          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="160" y="84">Cửa 1</text>
+
+        <g class="lamp" id="lamp1" transform="translate(256 120)">
+          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="256" y="150">Cửa 2</text>
+
+        <g class="lamp" id="lamp2" transform="translate(160 186)">
+          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="160" y="170">Cửa 3</text>
+
+        <g class="lamp" id="lamp3" transform="translate(64 120)">
+          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="64" y="150">Cửa 4</text>
+
+        <text class="temp" id="temp" x="160" y="125">--</text>
+        <text class="unit" x="160" y="142">nhiệt độ trong nhà (°C)</text>
+      </svg>
+      <div class="chips">
+        <span class="chip" id="fan0">Quạt 1: --</span>
+        <span class="chip" id="fan1">Quạt 2: --</span>
+        <span class="chip" id="warn">Cảnh báo: --</span>
+      </div>
+      <p class="hint">Vòng nét đứt màu xanh nghĩa là cảm biến ở cửa đó đang thấy có người.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Đèn ở các cửa</h2>
+      <div id="doors"></div>
+      <p class="hint">“Tự động” để đèn tự bật khi có người và tắt sau 10 giây khi hết người.</p>
+    </section>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var store = {
+    get: function (k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  var base = store.get('base', 'smarthome/kiet01');
+  var broker = store.get('broker', 'wss://broker.hivemq.com:8884/mqtt');
+  var client = null;
+  var conn = 'wait';
+  var lastLive = 0;
+
+  var data, mode;
+  function resetData() {
+    data = { T: null, L: [null, null, null, null], P: [null, null, null, null], F: [null, null], W: null };
+    mode = [null, null, null, null];
+  }
+  resetData();
+
+  // Dựng 4 hàng điều khiển
+  var doorsEl = $('#doors');
+  for (var i = 0; i < 4; i++) {
+    var d = document.createElement('div');
+    d.className = 'door';
+    d.innerHTML =
+      '<div class="top"><b>Cửa ' + (i + 1) + ' (L' + (i + 1) + ')</b><span class="info" id="info' + i + '">Chưa có dữ liệu</span></div>' +
+      '<div class="seg" role="group" aria-label="Điều khiển đèn cửa ' + (i + 1) + '">' +
+      '<button data-i="' + i + '" data-v="1">Bật</button>' +
+      '<button data-i="' + i + '" data-v="0">Tắt</button>' +
+      '<button data-i="' + i + '" data-v="AUTO">Tự động</button></div>';
+    doorsEl.appendChild(d);
+  }
+  doorsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    send(+b.dataset.i, b.dataset.v);
+  });
+
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast.t);
+    toast.t = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+
+  function send(i, v) {
+    if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lệnh.'); return; }
+    client.publish(base + '/cmd/L' + (i + 1), v);
+    mode[i] = v;
+    render();
+    toast('Đã gửi: Cửa ' + (i + 1) + ' → ' + (v === '1' ? 'Bật' : v === '0' ? 'Tắt' : 'Tự động'));
+  }
+
+  function setConn(state, text) {
+    conn = state;
+    var el = $('#conn');
+    el.className = 'pill ' + state;
+    $('#connText').textContent = text;
+  }
+
+  function render() {
+    // nhiệt độ
+    var t = $('#temp');
+    if (data.T === null) { t.textContent = '--'; t.setAttribute('class', 'temp'); }
+    else {
+      t.textContent = data.T.toFixed(1);
+      t.setAttribute('class', 'temp' + (data.T >= 30 ? ' hot' : data.T >= 25 ? ' warm' : ''));
+    }
+    // đèn + người
+    for (var i = 0; i < 4; i++) {
+      var g = $('#lamp' + i);
+      g.setAttribute('class', 'lamp' + (data.L[i] === '1' ? ' on' : '') + (data.P[i] === '1' ? ' here' : ''));
+      var lampTxt = data.L[i] === null ? 'Chưa có dữ liệu' : (data.L[i] === '1' ? 'Đèn sáng' : 'Đèn tắt');
+      var pTxt = data.P[i] === '1' ? ' · có người' : '';
+      $('#info' + i).textContent = lampTxt + pTxt;
+      var btns = doorsEl.querySelectorAll('button[data-i="' + i + '"]');
+      for (var k = 0; k < btns.length; k++) {
+        btns[k].classList.toggle('active', mode[i] === btns[k].dataset.v);
+      }
+    }
+    // quạt + cảnh báo
+    for (var f = 0; f < 2; f++) {
+      var c = $('#fan' + f);
+      var s = data.F[f];
+      c.textContent = 'Quạt ' + (f + 1) + ': ' + (s === null ? '--' : s === '1' ? 'đang chạy' : 'tắt');
+      c.className = 'chip' + (s === '1' ? ' run' : '');
+    }
+    var w = $('#warn');
+    w.textContent = 'Cảnh báo: ' + (data.W === null ? '--' : data.W === '1' ? 'nhiệt độ cao' : 'bình thường');
+    w.className = 'chip' + (data.W === '1' ? ' alert' : '');
+  }
+
+  function updateNotice() {
+    var n = $('#notice');
+    var live = Date.now() - lastLive < 8000;
+    if (conn === 'on' && !live) {
+      n.textContent = 'Đã kết nối broker nhưng chưa nhận tín hiệu mới từ nhà. Kiểm tra bridge.py và Proteus đang chạy, và tiền tố topic khớp với BASE. Số liệu đang hiển thị có thể là dữ liệu cũ.';
+      n.classList.add('show');
+    } else if (conn === 'off') {
+      n.textContent = 'Mất kết nối tới broker. App sẽ tự thử lại, hoặc kiểm tra Internet và địa chỉ broker trong Cài đặt.';
+      n.classList.add('show');
+    } else {
+      n.classList.remove('show');
+    }
+  }
+
+  function connect() {
+    if (typeof mqtt === 'undefined') {
+      setConn('off', 'Lỗi thư viện');
+      $('#notice').textContent = 'Không tải được thư viện MQTT. Hãy kiểm tra Internet rồi tải lại trang.';
+      $('#notice').classList.add('show');
+      return;
+    }
+    if (client) { client.end(true); client = null; }
+    setConn('wait', 'Đang kết nối…');
+    client = mqtt.connect(broker, {
+      clientId: 'web_' + Math.random().toString(16).slice(2, 10),
+      reconnectPeriod: 3000,
+      connectTimeout: 8000
+    });
+    client.on('connect', function () {
+      setConn('on', 'Đã kết nối');
+      client.subscribe(base + '/state/#');
+      updateNotice();
+    });
+    client.on('reconnect', function () { setConn('wait', 'Đang kết nối lại…'); });
+    client.on('close', function () { setConn('off', 'Mất kết nối'); updateNotice(); });
+    client.on('error', function () { setConn('off', 'Lỗi kết nối'); updateNotice(); });
+    client.on('message', function (topic, payload, packet) {
+      var key = topic.split('/').pop();
+      var v = payload.toString().trim();
+      var m;
+      if (key === 'T1') { var n = parseFloat(v); data.T = isNaN(n) ? null : n; }
+      else if ((m = /^L([1-4])$/.exec(key))) data.L[m[1] - 1] = v;
+      else if ((m = /^P([1-4])$/.exec(key))) data.P[m[1] - 1] = v;
+      else if ((m = /^F([1-2])$/.exec(key))) data.F[m[1] - 1] = v;
+      else if (key === 'W1') data.W = v;
+      else return;
+      if (!packet.retain) lastLive = Date.now();   // tin retained là dữ liệu cũ, không tính là tín hiệu sống
+      render();
+      updateNotice();
+    });
+  }
+
+  // Cài đặt
+  $('#baseIn').value = base;
+  $('#brokerIn').value = broker;
+  $('#gear').addEventListener('click', function () {
+    var s = $('#settings');
+    var open = s.classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+  });
+  $('#saveBtn').addEventListener('click', function () {
+    var b = $('#baseIn').value.trim().replace(/\/+$/, '');
+    var u = $('#brokerIn').value.trim();
+    if (!b || !u) { toast('Hãy điền đủ tiền tố topic và địa chỉ broker.'); return; }
+    base = b; broker = u;
+    store.set('base', base); store.set('broker', broker);
+    resetData(); lastLive = 0; render();
+    connect();
+    toast('Đã lưu, đang kết nối lại.');
+  });
+
+  setInterval(updateNotice, 1000);
+  render();
+  connect();
+})();
+</script>
+</body>
+</html>
