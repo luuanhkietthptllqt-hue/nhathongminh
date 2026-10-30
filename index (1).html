@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhà thông minh</title>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<style>
+  :root {
+    --paper: #EDF0EA;
+    --card: #F8FAF6;
+    --ink: #1B2B2F;
+    --muted: #5E6F72;
+    --line: #C9D1CB;
+    --lamp: #F0B33C;
+    --live: #1E8C7E;
+    --hot: #D0453B;
+    --warm: #C77D12;
+    --cool: #2F7FA8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  h1 { font-size: 1.6rem; margin: 0; font-weight: 700; letter-spacing: -0.01em; flex: 1; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px; background: var(--card);
+    border: 1px solid var(--line); font-size: 0.9rem;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .pill.on .dot { background: var(--live); }
+  .pill.wait .dot { background: var(--lamp); }
+  .pill.off .dot { background: var(--hot); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .ghost {
+    min-height: 40px; padding: 0 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--card);
+  }
+  .ghost:hover { border-color: var(--ink); }
+  :focus-visible { outline: 3px solid var(--live); outline-offset: 2px; }
+
+  #settings { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  #settings.open { display: block; }
+  #settings label { display: block; font-size: 0.9rem; color: var(--muted); margin: 8px 0 4px; }
+  #settings input {
+    width: 100%; min-height: 42px; padding: 0 10px; font: inherit;
+    border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+  }
+  #settings .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  #settings .save { min-height: 42px; padding: 0 18px; border-radius: 10px; border: 0; background: var(--ink); color: var(--paper); font-weight: 600; }
+  #settings small { color: var(--muted); }
+
+  #notice {
+    display: none; margin-bottom: 14px; padding: 10px 14px; border-radius: 10px;
+    background: #FBEED0; border: 1px solid #E5C77A; font-size: 0.95rem;
+  }
+  #notice.show { display: block; }
+
+  .layout { display: grid; gap: 16px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 820px) { .layout { grid-template-columns: 1.05fr 1fr; } }
+  .stack { display: grid; gap: 16px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 650; }
+
+  /* Mặt bằng ngôi nhà */
+  svg { width: 100%; height: auto; display: block; }
+  .wall { fill: none; stroke: var(--ink); stroke-width: 3; }
+  .gap { fill: var(--card); }
+  .halo { fill: var(--lamp); opacity: 0; transition: opacity .25s; }
+  .core { fill: #D8DDD6; stroke: var(--muted); stroke-width: 1.5; transition: fill .25s; }
+  .lamp.on .halo { opacity: .42; }
+  .lamp.on .core { fill: var(--lamp); stroke: var(--warm); }
+  .ring { fill: none; stroke: var(--live); stroke-width: 2.5; stroke-dasharray: 5 4; opacity: 0; }
+  .lamp.here .ring { opacity: 1; }
+  .tag { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+  .temp { font-size: 34px; font-weight: 700; text-anchor: middle; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .temp.warm { fill: var(--warm); }
+  .temp.hot { fill: var(--hot); }
+  .unit { font-size: 12px; fill: var(--muted); text-anchor: middle; }
+  .acbox rect { fill: #D8DDD6; stroke: var(--muted); stroke-width: 1.5; transition: fill .25s; }
+  .acbox line { stroke: var(--muted); stroke-width: 1.5; }
+  .acbox.on rect { fill: #8CCBEA; stroke: var(--cool); }
+  .acbox.on line { stroke: var(--cool); }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 0.9rem; }
+  .chip.run { background: #D9EEEA; border-color: var(--live); }
+  .chip.cool { background: #DCEEF8; border-color: var(--cool); }
+  .chip.alert { background: #F6D9D5; border-color: var(--hot); }
+
+  /* Hàng điều khiển */
+  .row-dev { padding: 12px 0; border-top: 1px solid var(--line); }
+  .row-dev:first-of-type { border-top: 0; padding-top: 0; }
+  .row-dev .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .row-dev b { font-size: 1rem; }
+  .row-dev .info { font-size: 0.88rem; color: var(--muted); text-align: right; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
+  .seg button { min-height: 46px; border: 0; background: transparent; border-left: 1px solid var(--line); }
+  .seg button:first-child { border-left: 0; }
+  .seg button:hover { background: #E1E6DE; }
+  .seg button.active { background: var(--ink); color: var(--paper); font-weight: 600; }
+  .hint { margin: 10px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+  .sched { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .sched .lbl { font-size: 0.9rem; margin-bottom: 8px; }
+  .sched .times { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+  .sched label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+  .sched input[type="time"] {
+    min-height: 44px; padding: 0 10px; font: inherit; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  }
+  .sched .go { min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: var(--ink); color: var(--paper); font-weight: 600; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px;
+    opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw;
+  }
+  #toast.show { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Nhà thông minh</h1>
+    <span class="pill wait" id="conn"><span class="dot"></span><span id="connText">Đang kết nối…</span></span>
+    <button class="ghost" id="gear" aria-expanded="false" aria-controls="settings">Cài đặt</button>
+  </header>
+
+  <section id="settings">
+    <label for="baseIn">Tiền tố topic (phải giống BASE trong bridge.py)</label>
+    <input id="baseIn" autocomplete="off" spellcheck="false">
+    <label for="brokerIn">Địa chỉ broker (WebSocket)</label>
+    <input id="brokerIn" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button class="save" id="saveBtn">Lưu và kết nối lại</button>
+      <small>Broker công cộng ai cũng đọc được topic, hãy đặt tiền tố riêng của bạn.</small>
+    </div>
+  </section>
+
+  <div id="notice" role="status"></div>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Mặt bằng ngôi nhà</h2>
+      <svg viewBox="0 0 320 240" role="img" aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn và cảm biến người, và một điều hòa">
+        <rect class="wall" x="40" y="30" width="240" height="180" rx="6"/>
+        <rect class="gap" x="142" y="26" width="36" height="8"/>
+        <rect class="gap" x="142" y="206" width="36" height="8"/>
+        <rect class="gap" x="36" y="102" width="8" height="36"/>
+        <rect class="gap" x="276" y="102" width="8" height="36"/>
+
+        <g class="lamp" id="lamp0" transform="translate(160 54)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
+        <text class="tag" x="160" y="84">Cửa 1</text>
+
+        <g class="lamp" id="lamp1" transform="translate(256 120)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
+        <text class="tag" x="256" y="150">Cửa 2</text>
+
+        <g class="lamp" id="lamp2" transform="translate(160 186)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
+        <text class="tag" x="160" y="170">Cửa 3</text>
+
+        <g class="lamp" id="lamp3" transform="translate(64 120)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
+        <text class="tag" x="64" y="150">Cửa 4</text>
+
+        <g class="acbox" id="acUnit">
+          <rect x="62" y="42" width="54" height="16" rx="4"/>
+          <line x1="70" y1="51" x2="108" y2="51"/>
+        </g>
+        <text class="tag" x="89" y="74">Điều hòa</text>
+
+        <text class="temp" id="temp" x="160" y="125">--</text>
+        <text class="unit" x="160" y="142">nhiệt độ trong nhà (°C)</text>
+      </svg>
+      <div class="chips">
+        <span class="chip" id="chipF1">Quạt 1: --</span>
+        <span class="chip" id="chipF2">Quạt 2: --</span>
+        <span class="chip" id="chipW1">Cảnh báo: --</span>
+        <span class="chip" id="chipAC">Điều hòa: --</span>
+        <span class="chip" id="chipTime">Giờ nhà: --:--</span>
+      </div>
+      <p class="hint">Vòng nét đứt màu xanh nghĩa là cảm biến ở cửa đó đang thấy có người.</p>
+    </section>
+
+    <div class="stack">
+      <section class="panel">
+        <h2>Đèn ở các cửa</h2>
+        <div id="lamps"></div>
+        <p class="hint">“Tự động”: đèn bật khi cảm biến ở cửa thấy người và tắt sau 10 giây khi hết người.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Quạt và cảnh báo</h2>
+        <div id="autos"></div>
+        <p class="hint">“Tự động” để thiết bị chạy theo nhiệt độ. Khi nhiệt độ từ 35°C trở lên, quạt và cảnh báo tự bật dù đang để Tắt.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Điều hòa</h2>
+        <div id="acrow"></div>
+        <div class="sched">
+          <div class="lbl" id="schedLabel">Lịch: chưa có dữ liệu</div>
+          <div class="times">
+            <label>Bật lúc<input type="time" id="schedFrom" value="22:00"></label>
+            <label>Tắt lúc<input type="time" id="schedTo" value="06:00"></label>
+            <button class="go" id="schedSave">Đặt lịch</button>
+          </div>
+          <p class="hint">Ở chế độ “Theo lịch”, điều hòa tự bật và tắt mỗi ngày theo giờ thực của máy chạy bridge.py.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var store = {
+    get: function (k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  var base = store.get('base', 'smarthome/kiet01');
+  var broker = store.get('broker', 'wss://broker.hivemq.com:8884/mqtt');
+  var client = null;
+  var conn = 'wait';
+  var lastLive = 0;
+  var schedEditing = false;
+
+  var data;
+  function resetData() {
+    data = {
+      T: null,
+      L: [null, null, null, null],
+      P: [null, null, null, null],
+      F: [null, null], W: null, AC: null,
+      M: { L1: null, L2: null, L3: null, L4: null, F1: null, F2: null, W1: null, AC: null },
+      TIME: null, SCHED: null
+    };
+  }
+  resetData();
+
+  var AUTOS = [
+    { id: 'F1', name: 'Quạt 1' },
+    { id: 'F2', name: 'Quạt 2' },
+    { id: 'W1', name: 'Đèn cảnh báo' }
+  ];
+
+  function segHtml(id, labels) {
+    var h = '<div class="seg" role="group" aria-label="' + id + '">';
+    labels.forEach(function (l) { h += '<button data-dev="' + id + '" data-v="' + l[0] + '">' + l[1] + '</button>'; });
+    return h + '</div>';
+  }
+  function rowHtml(id, title, labels) {
+    return '<div class="row-dev"><div class="top"><b>' + title + '</b><span class="info" id="info-' + id + '">Chưa có dữ liệu</span></div>' + segHtml(id, labels) + '</div>';
+  }
+
+  var html = '', i;
+  for (i = 1; i <= 4; i++) html += rowHtml('L' + i, 'Cửa ' + i + ' (L' + i + ')', [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Tự động']]);
+  $('#lamps').innerHTML = html;
+
+  html = '';
+  AUTOS.forEach(function (a) { html += rowHtml(a.id, a.name, [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Tự động']]); });
+  $('#autos').innerHTML = html;
+
+  $('#acrow').innerHTML = rowHtml('AC', 'Điều hòa (AC)', [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Theo lịch']]);
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-dev]');
+    if (b) send(b.dataset.dev, b.dataset.v);
+  });
+
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast.t);
+    toast.t = setTimeout(function () { t.classList.remove('show'); }, 2200);
+  }
+
+  function nameOf(dev) {
+    if (dev[0] === 'L') return 'Cửa ' + dev[1];
+    if (dev === 'F1') return 'Quạt 1';
+    if (dev === 'F2') return 'Quạt 2';
+    if (dev === 'W1') return 'Đèn cảnh báo';
+    return 'Điều hòa';
+  }
+
+  function send(dev, v) {
+    if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lệnh.'); return; }
+    client.publish(base + '/cmd/' + dev, v);
+    // cập nhật tạm trên màn hình, thiết bị sẽ xác nhận lại sau ít giây
+    data.M[dev] = (v === 'AUTO') ? 'A' : v;
+    if (dev[0] === 'L' && v !== 'AUTO') data.L[+dev[1] - 1] = v;
+    render();
+    toast('Đã gửi: ' + nameOf(dev) + ' → ' + (v === '1' ? 'Bật' : v === '0' ? 'Tắt' : (dev === 'AC' ? 'Theo lịch' : 'Tự động')));
+  }
+
+  function setConn(state, text) {
+    conn = state;
+    $('#conn').className = 'pill ' + state;
+    $('#connText').textContent = text;
+  }
+
+  function onoff(s, on, off) { return s === null ? '--' : (s === '1' ? on : off); }
+  var MODE_TXT = { A: 'tự động', '1': 'bật tay', '0': 'tắt tay' };
+
+  function stateOf(id) {
+    if (id[0] === 'L') return data.L[+id[1] - 1];
+    if (id[0] === 'F') return data.F[+id[1] - 1];
+    if (id === 'W1') return data.W;
+    return data.AC;
+  }
+
+  function setChip(id, text, cls) {
+    var c = $('#' + id);
+    c.textContent = text;
+    c.className = 'chip' + (cls ? ' ' + cls : '');
+  }
+
+  function render() {
+    // nhiệt độ
+    var t = $('#temp');
+    if (data.T === null) { t.textContent = '--'; t.setAttribute('class', 'temp'); }
+    else {
+      t.textContent = data.T.toFixed(1);
+      t.setAttribute('class', 'temp' + (data.T >= 30 ? ' hot' : data.T >= 25 ? ' warm' : ''));
+    }
+
+    // đèn + người ở cửa
+    for (var i = 0; i < 4; i++) {
+      var id = 'L' + (i + 1);
+      $('#lamp' + i).setAttribute('class', 'lamp' + (data.L[i] === '1' ? ' on' : '') + (data.P[i] === '1' ? ' here' : ''));
+      var s = data.L[i], m = data.M[id];
+      var txt = s === null ? 'Chưa có dữ liệu' : (s === '1' ? 'Đèn sáng' : 'Đèn tắt');
+      if (data.P[i] === '1') txt += ' · có người';
+      if (m !== null && s !== null) txt += ' · ' + (m === 'A' ? 'theo cảm biến' : MODE_TXT[m]);
+      $('#info-' + id).textContent = txt;
+    }
+
+    // điều hòa trên mặt bằng
+    $('#acUnit').setAttribute('class', 'acbox' + (data.AC === '1' ? ' on' : ''));
+
+    // quạt, cảnh báo
+    ['F1', 'F2', 'W1'].forEach(function (id) {
+      var s = stateOf(id), m = data.M[id];
+      var txt = s === null ? 'Chưa có dữ liệu' : (id === 'W1' ? (s === '1' ? 'Đang cảnh báo' : 'Không cảnh báo') : (s === '1' ? 'Đang chạy' : 'Đang tắt'));
+      if (m !== null && s !== null) txt += ' · ' + MODE_TXT[m];
+      $('#info-' + id).textContent = txt;
+    });
+
+    // điều hòa
+    var acTxt = data.AC === null ? 'Chưa có dữ liệu' : (data.AC === '1' ? 'Đang bật' : 'Đang tắt');
+    if (data.M.AC !== null && data.AC !== null) acTxt += ' · ' + (data.M.AC === 'A' ? 'theo lịch' : MODE_TXT[data.M.AC]);
+    $('#info-AC').textContent = acTxt;
+
+    // nút đang chọn (theo chế độ thiết bị báo về)
+    var btns = document.querySelectorAll('button[data-dev]');
+    for (var k = 0; k < btns.length; k++) {
+      var d = btns[k].dataset.dev, v = btns[k].dataset.v, m2 = data.M[d];
+      var active = (m2 === 'A' && v === 'AUTO') || m2 === v;
+      btns[k].classList.toggle('active', !!active);
+    }
+
+    // chip
+    setChip('chipF1', 'Quạt 1: ' + onoff(data.F[0], 'chạy', 'tắt'), data.F[0] === '1' ? 'run' : '');
+    setChip('chipF2', 'Quạt 2: ' + onoff(data.F[1], 'chạy', 'tắt'), data.F[1] === '1' ? 'run' : '');
+    setChip('chipW1', 'Cảnh báo: ' + (data.W === null ? '--' : data.W === '1' ? 'nhiệt độ cao' : 'bình thường'), data.W === '1' ? 'alert' : '');
+    setChip('chipAC', 'Điều hòa: ' + onoff(data.AC, 'bật', 'tắt'), data.AC === '1' ? 'cool' : '');
+    setChip('chipTime', 'Giờ nhà: ' + (data.TIME && data.TIME !== '--:--' ? data.TIME : '--:--'), '');
+
+    // lịch
+    if (data.SCHED) {
+      var p = data.SCHED.split('-');
+      $('#schedLabel').textContent = 'Lịch hiện tại: bật lúc ' + p[0] + ', tắt lúc ' + p[1] + ' mỗi ngày';
+      if (!schedEditing && p.length === 2) {
+        $('#schedFrom').value = p[0];
+        $('#schedTo').value = p[1];
+      }
+    }
+  }
+
+  function updateNotice() {
+    var n = $('#notice');
+    var live = Date.now() - lastLive < 8000;
+    if (conn === 'on' && !live) {
+      n.textContent = 'Đã kết nối broker nhưng chưa nhận tín hiệu mới từ nhà. Kiểm tra bridge.py và Proteus đang chạy, và tiền tố topic khớp với BASE. Số liệu đang hiển thị có thể là dữ liệu cũ.';
+      n.classList.add('show');
+    } else if (conn === 'off') {
+      n.textContent = 'Mất kết nối tới broker. App sẽ tự thử lại, hoặc kiểm tra Internet và địa chỉ broker trong Cài đặt.';
+      n.classList.add('show');
+    } else {
+      n.classList.remove('show');
+    }
+  }
+
+  function connect() {
+    if (typeof mqtt === 'undefined') {
+      setConn('off', 'Lỗi thư viện');
+      $('#notice').textContent = 'Không tải được thư viện MQTT. Hãy kiểm tra Internet rồi tải lại trang.';
+      $('#notice').classList.add('show');
+      return;
+    }
+    if (client) { client.end(true); client = null; }
+    setConn('wait', 'Đang kết nối…');
+    client = mqtt.connect(broker, {
+      clientId: 'web_' + Math.random().toString(16).slice(2, 10),
+      reconnectPeriod: 3000,
+      connectTimeout: 8000
+    });
+    client.on('connect', function () {
+      setConn('on', 'Đã kết nối');
+      client.subscribe(base + '/state/#');
+      updateNotice();
+    });
+    client.on('reconnect', function () { setConn('wait', 'Đang kết nối lại…'); });
+    client.on('close', function () { setConn('off', 'Mất kết nối'); updateNotice(); });
+    client.on('error', function () { setConn('off', 'Lỗi kết nối'); updateNotice(); });
+    client.on('message', function (topic, payload, packet) {
+      var key = topic.split('/').pop();
+      var v = payload.toString().trim();
+      var m;
+      if (key === 'T1') { var n = parseFloat(v); data.T = isNaN(n) ? null : n; }
+      else if ((m = /^L([1-4])$/.exec(key))) data.L[m[1] - 1] = v;
+      else if ((m = /^P([1-4])$/.exec(key))) data.P[m[1] - 1] = v;
+      else if ((m = /^F([1-2])$/.exec(key))) data.F[m[1] - 1] = v;
+      else if (key === 'W1') data.W = v;
+      else if (key === 'AC') data.AC = v;
+      else if ((m = /^M(L[1-4]|F1|F2|W1|AC)$/.exec(key))) data.M[m[1]] = v;
+      else if (key === 'TIME') data.TIME = v;
+      else if (key === 'SCHED') data.SCHED = v;
+      else return;
+      if (!packet.retain) lastLive = Date.now();   // tin retained là dữ liệu cũ, không tính là tín hiệu sống
+      render();
+      updateNotice();
+    });
+  }
+
+  // Đặt lịch điều hòa
+  ['#schedFrom', '#schedTo'].forEach(function (s) {
+    $(s).addEventListener('input', function () { schedEditing = true; });
+  });
+  $('#schedSave').addEventListener('click', function () {
+    var a = $('#schedFrom').value, b = $('#schedTo').value;
+    if (!a || !b) { toast('Hãy chọn đủ giờ bật và giờ tắt.'); return; }
+    if (a === b) { toast('Giờ bật và giờ tắt đang giống nhau.'); return; }
+    if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lịch.'); return; }
+    client.publish(base + '/cmd/SCHED', a + '-' + b);
+    schedEditing = false;
+    toast('Đã gửi lịch: bật ' + a + ', tắt ' + b);
+  });
+
+  // Cài đặt
+  $('#baseIn').value = base;
+  $('#brokerIn').value = broker;
+  $('#gear').addEventListener('click', function () {
+    var open = $('#settings').classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+  });
+  $('#saveBtn').addEventListener('click', function () {
+    var b = $('#baseIn').value.trim().replace(/\/+$/, '');
+    var u = $('#brokerIn').value.trim();
+    if (!b || !u) { toast('Hãy điền đủ tiền tố topic và địa chỉ broker.'); return; }
+    base = b; broker = u;
+    store.set('base', base); store.set('broker', broker);
+    resetData(); lastLive = 0; render();
+    connect();
+    toast('Đã lưu, đang kết nối lại.');
+  });
+
+  setInterval(updateNotice, 1000);
+  render();
+  connect();
+})();
+</script>
+</body>
+</html>
