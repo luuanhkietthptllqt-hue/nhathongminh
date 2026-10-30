@@ -16,6 +16,7 @@
     --live: #1E8C7E;
     --hot: #D0453B;
     --warm: #C77D12;
+    --cool: #2F7FA8;
   }
   * { box-sizing: border-box; }
   body {
@@ -63,8 +64,9 @@
   }
   #notice.show { display: block; }
 
-  .layout { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  .layout { display: grid; gap: 16px; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 820px) { .layout { grid-template-columns: 1.05fr 1fr; } }
+  .stack { display: grid; gap: 16px; }
   .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
   h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 650; }
 
@@ -83,24 +85,39 @@
   .temp.warm { fill: var(--warm); }
   .temp.hot { fill: var(--hot); }
   .unit { font-size: 12px; fill: var(--muted); text-anchor: middle; }
+  .acbox rect { fill: #D8DDD6; stroke: var(--muted); stroke-width: 1.5; transition: fill .25s; }
+  .acbox line { stroke: var(--muted); stroke-width: 1.5; }
+  .acbox.on rect { fill: #8CCBEA; stroke: var(--cool); }
+  .acbox.on line { stroke: var(--cool); }
 
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .chip { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 0.9rem; }
   .chip.run { background: #D9EEEA; border-color: var(--live); }
+  .chip.cool { background: #DCEEF8; border-color: var(--cool); }
   .chip.alert { background: #F6D9D5; border-color: var(--hot); }
 
-  /* Điều khiển từng cửa */
-  .door { padding: 12px 0; border-top: 1px solid var(--line); }
-  .door:first-of-type { border-top: 0; padding-top: 0; }
-  .door .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-  .door b { font-size: 1rem; }
-  .door .info { font-size: 0.88rem; color: var(--muted); text-align: right; }
+  /* Hàng điều khiển */
+  .row-dev { padding: 12px 0; border-top: 1px solid var(--line); }
+  .row-dev:first-of-type { border-top: 0; padding-top: 0; }
+  .row-dev .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .row-dev b { font-size: 1rem; }
+  .row-dev .info { font-size: 0.88rem; color: var(--muted); text-align: right; }
   .seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
   .seg button { min-height: 46px; border: 0; background: transparent; border-left: 1px solid var(--line); }
   .seg button:first-child { border-left: 0; }
   .seg button:hover { background: #E1E6DE; }
   .seg button.active { background: var(--ink); color: var(--paper); font-weight: 600; }
   .hint { margin: 10px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+  .sched { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .sched .lbl { font-size: 0.9rem; margin-bottom: 8px; }
+  .sched .times { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+  .sched label { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+  .sched input[type="time"] {
+    min-height: 44px; padding: 0 10px; font: inherit; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  }
+  .sched .go { min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: var(--ink); color: var(--paper); font-weight: 600; }
 
   #toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -135,49 +152,71 @@
   <div class="layout">
     <section class="panel">
       <h2>Mặt bằng ngôi nhà</h2>
-      <svg viewBox="0 0 320 240" role="img" aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn">
+      <svg viewBox="0 0 320 240" role="img" aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn và cảm biến người, và một điều hòa">
         <rect class="wall" x="40" y="30" width="240" height="180" rx="6"/>
         <rect class="gap" x="142" y="26" width="36" height="8"/>
-        <rect class="gap" x="146" y="206" width="36" height="8" transform="translate(-4 0)"/>
+        <rect class="gap" x="142" y="206" width="36" height="8"/>
         <rect class="gap" x="36" y="102" width="8" height="36"/>
         <rect class="gap" x="276" y="102" width="8" height="36"/>
 
-        <g class="lamp" id="lamp0" transform="translate(160 54)">
-          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
-        </g>
+        <g class="lamp" id="lamp0" transform="translate(160 54)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
         <text class="tag" x="160" y="84">Cửa 1</text>
 
-        <g class="lamp" id="lamp1" transform="translate(256 120)">
-          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
-        </g>
+        <g class="lamp" id="lamp1" transform="translate(256 120)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
         <text class="tag" x="256" y="150">Cửa 2</text>
 
-        <g class="lamp" id="lamp2" transform="translate(160 186)">
-          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
-        </g>
+        <g class="lamp" id="lamp2" transform="translate(160 186)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
         <text class="tag" x="160" y="170">Cửa 3</text>
 
-        <g class="lamp" id="lamp3" transform="translate(64 120)">
-          <circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/>
-        </g>
+        <g class="lamp" id="lamp3" transform="translate(64 120)"><circle class="halo" r="32"/><circle class="ring" r="17"/><circle class="core" r="9"/></g>
         <text class="tag" x="64" y="150">Cửa 4</text>
+
+        <g class="acbox" id="acUnit">
+          <rect x="62" y="42" width="54" height="16" rx="4"/>
+          <line x1="70" y1="51" x2="108" y2="51"/>
+        </g>
+        <text class="tag" x="89" y="74">Điều hòa</text>
 
         <text class="temp" id="temp" x="160" y="125">--</text>
         <text class="unit" x="160" y="142">nhiệt độ trong nhà (°C)</text>
       </svg>
       <div class="chips">
-        <span class="chip" id="fan0">Quạt 1: --</span>
-        <span class="chip" id="fan1">Quạt 2: --</span>
-        <span class="chip" id="warn">Cảnh báo: --</span>
+        <span class="chip" id="chipF1">Quạt 1: --</span>
+        <span class="chip" id="chipF2">Quạt 2: --</span>
+        <span class="chip" id="chipW1">Cảnh báo: --</span>
+        <span class="chip" id="chipAC">Điều hòa: --</span>
+        <span class="chip" id="chipTime">Giờ nhà: --:--</span>
       </div>
       <p class="hint">Vòng nét đứt màu xanh nghĩa là cảm biến ở cửa đó đang thấy có người.</p>
     </section>
 
-    <section class="panel">
-      <h2>Đèn ở các cửa</h2>
-      <div id="doors"></div>
-      <p class="hint">“Tự động” để đèn tự bật khi có người và tắt sau 10 giây khi hết người.</p>
-    </section>
+    <div class="stack">
+      <section class="panel">
+        <h2>Đèn ở các cửa</h2>
+        <div id="lamps"></div>
+        <p class="hint">“Tự động”: đèn bật khi cảm biến ở cửa thấy người và tắt sau 10 giây khi hết người.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Quạt và cảnh báo</h2>
+        <div id="autos"></div>
+        <p class="hint">“Tự động” để thiết bị chạy theo nhiệt độ. Khi nhiệt độ từ 35°C trở lên, quạt và cảnh báo tự bật dù đang để Tắt.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Điều hòa</h2>
+        <div id="acrow"></div>
+        <div class="sched">
+          <div class="lbl" id="schedLabel">Lịch: chưa có dữ liệu</div>
+          <div class="times">
+            <label>Bật lúc<input type="time" id="schedFrom" value="22:00"></label>
+            <label>Tắt lúc<input type="time" id="schedTo" value="06:00"></label>
+            <button class="go" id="schedSave">Đặt lịch</button>
+          </div>
+          <p class="hint">Ở chế độ “Theo lịch”, điều hòa tự bật và tắt mỗi ngày theo giờ thực của máy chạy bridge.py.</p>
+        </div>
+      </section>
+    </div>
   </div>
 </div>
 <div id="toast" role="status"></div>
@@ -195,31 +234,49 @@
   var client = null;
   var conn = 'wait';
   var lastLive = 0;
+  var schedEditing = false;
 
-  var data, mode;
+  var data;
   function resetData() {
-    data = { T: null, L: [null, null, null, null], P: [null, null, null, null], F: [null, null], W: null };
-    mode = [null, null, null, null];
+    data = {
+      T: null,
+      L: [null, null, null, null],
+      P: [null, null, null, null],
+      F: [null, null], W: null, AC: null,
+      M: { L1: null, L2: null, L3: null, L4: null, F1: null, F2: null, W1: null, AC: null },
+      TIME: null, SCHED: null
+    };
   }
   resetData();
 
-  // Dựng 4 hàng điều khiển
-  var doorsEl = $('#doors');
-  for (var i = 0; i < 4; i++) {
-    var d = document.createElement('div');
-    d.className = 'door';
-    d.innerHTML =
-      '<div class="top"><b>Cửa ' + (i + 1) + ' (L' + (i + 1) + ')</b><span class="info" id="info' + i + '">Chưa có dữ liệu</span></div>' +
-      '<div class="seg" role="group" aria-label="Điều khiển đèn cửa ' + (i + 1) + '">' +
-      '<button data-i="' + i + '" data-v="1">Bật</button>' +
-      '<button data-i="' + i + '" data-v="0">Tắt</button>' +
-      '<button data-i="' + i + '" data-v="AUTO">Tự động</button></div>';
-    doorsEl.appendChild(d);
+  var AUTOS = [
+    { id: 'F1', name: 'Quạt 1' },
+    { id: 'F2', name: 'Quạt 2' },
+    { id: 'W1', name: 'Đèn cảnh báo' }
+  ];
+
+  function segHtml(id, labels) {
+    var h = '<div class="seg" role="group" aria-label="' + id + '">';
+    labels.forEach(function (l) { h += '<button data-dev="' + id + '" data-v="' + l[0] + '">' + l[1] + '</button>'; });
+    return h + '</div>';
   }
-  doorsEl.addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    send(+b.dataset.i, b.dataset.v);
+  function rowHtml(id, title, labels) {
+    return '<div class="row-dev"><div class="top"><b>' + title + '</b><span class="info" id="info-' + id + '">Chưa có dữ liệu</span></div>' + segHtml(id, labels) + '</div>';
+  }
+
+  var html = '', i;
+  for (i = 1; i <= 4; i++) html += rowHtml('L' + i, 'Cửa ' + i + ' (L' + i + ')', [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Tự động']]);
+  $('#lamps').innerHTML = html;
+
+  html = '';
+  AUTOS.forEach(function (a) { html += rowHtml(a.id, a.name, [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Tự động']]); });
+  $('#autos').innerHTML = html;
+
+  $('#acrow').innerHTML = rowHtml('AC', 'Điều hòa (AC)', [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Theo lịch']]);
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-dev]');
+    if (b) send(b.dataset.dev, b.dataset.v);
   });
 
   function toast(msg) {
@@ -230,19 +287,44 @@
     toast.t = setTimeout(function () { t.classList.remove('show'); }, 2200);
   }
 
-  function send(i, v) {
+  function nameOf(dev) {
+    if (dev[0] === 'L') return 'Cửa ' + dev[1];
+    if (dev === 'F1') return 'Quạt 1';
+    if (dev === 'F2') return 'Quạt 2';
+    if (dev === 'W1') return 'Đèn cảnh báo';
+    return 'Điều hòa';
+  }
+
+  function send(dev, v) {
     if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lệnh.'); return; }
-    client.publish(base + '/cmd/L' + (i + 1), v);
-    mode[i] = v;
+    client.publish(base + '/cmd/' + dev, v);
+    // cập nhật tạm trên màn hình, thiết bị sẽ xác nhận lại sau ít giây
+    data.M[dev] = (v === 'AUTO') ? 'A' : v;
+    if (dev[0] === 'L' && v !== 'AUTO') data.L[+dev[1] - 1] = v;
     render();
-    toast('Đã gửi: Cửa ' + (i + 1) + ' → ' + (v === '1' ? 'Bật' : v === '0' ? 'Tắt' : 'Tự động'));
+    toast('Đã gửi: ' + nameOf(dev) + ' → ' + (v === '1' ? 'Bật' : v === '0' ? 'Tắt' : (dev === 'AC' ? 'Theo lịch' : 'Tự động')));
   }
 
   function setConn(state, text) {
     conn = state;
-    var el = $('#conn');
-    el.className = 'pill ' + state;
+    $('#conn').className = 'pill ' + state;
     $('#connText').textContent = text;
+  }
+
+  function onoff(s, on, off) { return s === null ? '--' : (s === '1' ? on : off); }
+  var MODE_TXT = { A: 'tự động', '1': 'bật tay', '0': 'tắt tay' };
+
+  function stateOf(id) {
+    if (id[0] === 'L') return data.L[+id[1] - 1];
+    if (id[0] === 'F') return data.F[+id[1] - 1];
+    if (id === 'W1') return data.W;
+    return data.AC;
+  }
+
+  function setChip(id, text, cls) {
+    var c = $('#' + id);
+    c.textContent = text;
+    c.className = 'chip' + (cls ? ' ' + cls : '');
   }
 
   function render() {
@@ -253,28 +335,58 @@
       t.textContent = data.T.toFixed(1);
       t.setAttribute('class', 'temp' + (data.T >= 30 ? ' hot' : data.T >= 25 ? ' warm' : ''));
     }
-    // đèn + người
+
+    // đèn + người ở cửa
     for (var i = 0; i < 4; i++) {
-      var g = $('#lamp' + i);
-      g.setAttribute('class', 'lamp' + (data.L[i] === '1' ? ' on' : '') + (data.P[i] === '1' ? ' here' : ''));
-      var lampTxt = data.L[i] === null ? 'Chưa có dữ liệu' : (data.L[i] === '1' ? 'Đèn sáng' : 'Đèn tắt');
-      var pTxt = data.P[i] === '1' ? ' · có người' : '';
-      $('#info' + i).textContent = lampTxt + pTxt;
-      var btns = doorsEl.querySelectorAll('button[data-i="' + i + '"]');
-      for (var k = 0; k < btns.length; k++) {
-        btns[k].classList.toggle('active', mode[i] === btns[k].dataset.v);
+      var id = 'L' + (i + 1);
+      $('#lamp' + i).setAttribute('class', 'lamp' + (data.L[i] === '1' ? ' on' : '') + (data.P[i] === '1' ? ' here' : ''));
+      var s = data.L[i], m = data.M[id];
+      var txt = s === null ? 'Chưa có dữ liệu' : (s === '1' ? 'Đèn sáng' : 'Đèn tắt');
+      if (data.P[i] === '1') txt += ' · có người';
+      if (m !== null && s !== null) txt += ' · ' + (m === 'A' ? 'theo cảm biến' : MODE_TXT[m]);
+      $('#info-' + id).textContent = txt;
+    }
+
+    // điều hòa trên mặt bằng
+    $('#acUnit').setAttribute('class', 'acbox' + (data.AC === '1' ? ' on' : ''));
+
+    // quạt, cảnh báo
+    ['F1', 'F2', 'W1'].forEach(function (id) {
+      var s = stateOf(id), m = data.M[id];
+      var txt = s === null ? 'Chưa có dữ liệu' : (id === 'W1' ? (s === '1' ? 'Đang cảnh báo' : 'Không cảnh báo') : (s === '1' ? 'Đang chạy' : 'Đang tắt'));
+      if (m !== null && s !== null) txt += ' · ' + MODE_TXT[m];
+      $('#info-' + id).textContent = txt;
+    });
+
+    // điều hòa
+    var acTxt = data.AC === null ? 'Chưa có dữ liệu' : (data.AC === '1' ? 'Đang bật' : 'Đang tắt');
+    if (data.M.AC !== null && data.AC !== null) acTxt += ' · ' + (data.M.AC === 'A' ? 'theo lịch' : MODE_TXT[data.M.AC]);
+    $('#info-AC').textContent = acTxt;
+
+    // nút đang chọn (theo chế độ thiết bị báo về)
+    var btns = document.querySelectorAll('button[data-dev]');
+    for (var k = 0; k < btns.length; k++) {
+      var d = btns[k].dataset.dev, v = btns[k].dataset.v, m2 = data.M[d];
+      var active = (m2 === 'A' && v === 'AUTO') || m2 === v;
+      btns[k].classList.toggle('active', !!active);
+    }
+
+    // chip
+    setChip('chipF1', 'Quạt 1: ' + onoff(data.F[0], 'chạy', 'tắt'), data.F[0] === '1' ? 'run' : '');
+    setChip('chipF2', 'Quạt 2: ' + onoff(data.F[1], 'chạy', 'tắt'), data.F[1] === '1' ? 'run' : '');
+    setChip('chipW1', 'Cảnh báo: ' + (data.W === null ? '--' : data.W === '1' ? 'nhiệt độ cao' : 'bình thường'), data.W === '1' ? 'alert' : '');
+    setChip('chipAC', 'Điều hòa: ' + onoff(data.AC, 'bật', 'tắt'), data.AC === '1' ? 'cool' : '');
+    setChip('chipTime', 'Giờ nhà: ' + (data.TIME && data.TIME !== '--:--' ? data.TIME : '--:--'), '');
+
+    // lịch
+    if (data.SCHED) {
+      var p = data.SCHED.split('-');
+      $('#schedLabel').textContent = 'Lịch hiện tại: bật lúc ' + p[0] + ', tắt lúc ' + p[1] + ' mỗi ngày';
+      if (!schedEditing && p.length === 2) {
+        $('#schedFrom').value = p[0];
+        $('#schedTo').value = p[1];
       }
     }
-    // quạt + cảnh báo
-    for (var f = 0; f < 2; f++) {
-      var c = $('#fan' + f);
-      var s = data.F[f];
-      c.textContent = 'Quạt ' + (f + 1) + ': ' + (s === null ? '--' : s === '1' ? 'đang chạy' : 'tắt');
-      c.className = 'chip' + (s === '1' ? ' run' : '');
-    }
-    var w = $('#warn');
-    w.textContent = 'Cảnh báo: ' + (data.W === null ? '--' : data.W === '1' ? 'nhiệt độ cao' : 'bình thường');
-    w.className = 'chip' + (data.W === '1' ? ' alert' : '');
   }
 
   function updateNotice() {
@@ -322,6 +434,10 @@
       else if ((m = /^P([1-4])$/.exec(key))) data.P[m[1] - 1] = v;
       else if ((m = /^F([1-2])$/.exec(key))) data.F[m[1] - 1] = v;
       else if (key === 'W1') data.W = v;
+      else if (key === 'AC') data.AC = v;
+      else if ((m = /^M(L[1-4]|F1|F2|W1|AC)$/.exec(key))) data.M[m[1]] = v;
+      else if (key === 'TIME') data.TIME = v;
+      else if (key === 'SCHED') data.SCHED = v;
       else return;
       if (!packet.retain) lastLive = Date.now();   // tin retained là dữ liệu cũ, không tính là tín hiệu sống
       render();
@@ -329,12 +445,25 @@
     });
   }
 
+  // Đặt lịch điều hòa
+  ['#schedFrom', '#schedTo'].forEach(function (s) {
+    $(s).addEventListener('input', function () { schedEditing = true; });
+  });
+  $('#schedSave').addEventListener('click', function () {
+    var a = $('#schedFrom').value, b = $('#schedTo').value;
+    if (!a || !b) { toast('Hãy chọn đủ giờ bật và giờ tắt.'); return; }
+    if (a === b) { toast('Giờ bật và giờ tắt đang giống nhau.'); return; }
+    if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lịch.'); return; }
+    client.publish(base + '/cmd/SCHED', a + '-' + b);
+    schedEditing = false;
+    toast('Đã gửi lịch: bật ' + a + ', tắt ' + b);
+  });
+
   // Cài đặt
   $('#baseIn').value = base;
   $('#brokerIn').value = broker;
   $('#gear').addEventListener('click', function () {
-    var s = $('#settings');
-    var open = s.classList.toggle('open');
+    var open = $('#settings').classList.toggle('open');
     this.setAttribute('aria-expanded', open);
   });
   $('#saveBtn').addEventListener('click', function () {
