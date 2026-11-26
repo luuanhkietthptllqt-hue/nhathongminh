@@ -5,326 +5,646 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nhà thông minh</title>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
-
 <style>
-:root{
-  --bg:#f3f6fa;--surface:#fff;--surface-2:#f8fafc;--ink:#172b4d;
-  --muted:#718096;--line:#e5eaf1;--primary:#2563eb;--primary-soft:#eff6ff;
-  --teal:#0f9b8e;--teal-soft:#e6f7f4;--amber:#d97706;--amber-soft:#fff7e6;
-  --red:#dc4c4c;--red-soft:#fff0f0;--blue-soft:#eaf2ff;
-  --shadow:0 5px 20px rgba(25,42,70,.055);
-}
-*{box-sizing:border-box}
-html{min-height:100%;background:var(--bg)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;line-height:1.45}
-button,input{font:inherit}
-button{cursor:pointer}
-.wrap{width:min(1500px,100%);margin:0 auto;padding:22px 26px 28px}
-header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.brand{display:flex;align-items:center;gap:12px;flex:1;min-width:230px}
-.brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:var(--ink);color:#fff;font-size:21px;font-weight:800;box-shadow:0 5px 12px #172b4d22}
-h1{margin:0;font-size:1.45rem;line-height:1.15;font-weight:760;letter-spacing:-.035em}
-.subtitle{margin-top:4px;color:var(--muted);font-size:.78rem;letter-spacing:.015em}
-.header-actions{display:flex;align-items:center;gap:9px}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:.8rem;font-weight:650;color:var(--ink)}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
-.pill.on .dot{background:var(--teal);box-shadow:0 0 0 4px var(--teal-soft)}
-.pill.wait .dot{background:var(--amber)}
-.pill.off .dot{background:var(--red)}
-.ghost{min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-size:.82rem;font-weight:650;transition:.18s}
-.ghost:hover{border-color:#b7c7dc;background:var(--primary-soft);color:var(--primary)}
-:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+  :root {
+    --bg: #E9EDE8;
+    --surface: #F7F9F6;
+    --surface-2: #EEF2EC;
+    --ink: #16262A;
+    --muted: #5A6C70;
+    --line: #CBD4CE;
+    --lamp: #F2B632;
+    --lamp-glow: rgba(242, 182, 50, 0.35);
+    --live: #158477;
+    --live-soft: #D6EFEA;
+    --hot: #CE3E35;
+    --hot-soft: #F9DCD9;
+    --warm: #C47A10;
+    --cool: #2579A6;
+    --cool-soft: #D8EEF9;
+    --radius: 14px;
+    --shadow: 0 4px 16px rgba(22, 38, 42, 0.04);
+  }
 
-#settings{display:none;margin-bottom:14px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
-#settings.open{display:block}
-#settings label{display:block;margin:8px 0 5px;color:var(--muted);font-size:.8rem;font-weight:600}
-#settings input{width:100%;min-height:40px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink)}
-#settings .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
-#settings .save{min-height:39px;padding:0 16px;border:0;border-radius:9px;background:var(--ink);color:#fff;font-size:.82rem;font-weight:650}
-#settings small{color:var(--muted);font-size:.76rem}
+  *, *::before, *::after { box-sizing: border-box; }
 
-#notice{display:none;margin-bottom:14px;padding:10px 13px;border:1px solid #f2d28d;border-radius:11px;background:var(--amber-soft);color:#8a570b;font-size:.81rem}
-#notice.show{display:block}
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.35;
+    -webkit-font-smoothing: antialiased;
+  }
 
-.layout{display:grid;grid-template-columns:minmax(250px,.92fr) minmax(350px,1.18fr) minmax(280px,.95fr);gap:14px;align-items:stretch}
-.stack{display:grid;grid-template-rows:1fr 1fr;gap:14px;min-width:0;min-height:0}
-.panel{min-width:0;padding:17px 17px 15px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
-h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;padding-bottom:11px;border-bottom:1px solid var(--line);font-size:.93rem;font-weight:750;letter-spacing:-.01em}
-.section-icon{width:27px;height:27px;display:inline-grid;place-items:center;border-radius:8px;background:var(--primary-soft);color:var(--primary);font-size:.9rem}
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2.5px solid var(--live); outline-offset: 2px; }
 
-.panel svg{display:block;width:100%;height:auto;max-width:390px;margin:0 auto}
-.wall{fill:none;stroke:#334b68;stroke-width:3}
-.gap{fill:var(--surface)}
-.halo{fill:#f6b93b;opacity:0;transition:opacity .25s}
-.core{fill:#e2e8f0;stroke:#8090a4;stroke-width:1.5;transition:fill .25s}
-.lamp.on .halo{opacity:.45}
-.lamp.on .core{fill:#f6c453;stroke:#d99b20}
-.ring{fill:none;stroke:var(--teal);stroke-width:2.5;stroke-dasharray:5 4;opacity:0}
-.lamp.here .ring{opacity:1}
-.tag{font-size:11px;fill:var(--muted);text-anchor:middle}
-.temp{font-size:34px;font-weight:800;text-anchor:middle;fill:var(--ink);font-variant-numeric:tabular-nums}
-.temp.warm{fill:var(--amber)}.temp.hot{fill:var(--red)}
-.unit{font-size:12px;fill:var(--muted);text-anchor:middle}
-.acbox rect{fill:#e2e8f0;stroke:#8090a4;stroke-width:1.5;transition:fill .2s}
-.acbox line{stroke:#8090a4;stroke-width:1.5}
-.acbox.on rect{fill:#bfdbfe;stroke:var(--primary)}
-.acbox.on line{stroke:var(--primary)}
+  .app {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
-.chip{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:#52647b;font-size:.74rem;font-weight:650}
-.chip.run{border-color:#b7e8df;background:var(--teal-soft);color:#08796e}
-.chip.cool{border-color:#c9dcff;background:var(--blue-soft);color:#245bb0}
-.chip.alert{border-color:#f4c4c4;background:var(--red-soft);color:#b42323}
-.hint{margin:10px 0 0;color:var(--muted);font-size:.75rem;line-height:1.5}
+  /* Topbar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    box-shadow: var(--shadow);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-mark {
+    width: 10px;
+    height: 22px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--live), var(--cool));
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .pill.on { background: var(--live-soft); border-color: #9BD5CC; color: #0F5E54; }
+  .pill.on .dot { background: var(--live); }
+  .pill.wait { background: #FDF0CE; border-color: #E7C97B; color: #7C5308; }
+  .pill.wait .dot { background: var(--lamp); }
+  .pill.off { background: var(--hot-soft); border-color: #E8ABA5; color: #8E231C; }
+  .pill.off .dot { background: var(--hot); }
 
-.row-dev{padding:10px 0;border-top:1px solid #edf0f5}
-.row-dev:first-of-type{padding-top:0;border-top:0}
-.row-dev .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
-.row-dev b{color:var(--ink);font-size:.83rem;font-weight:700}
-.row-dev .info{color:var(--muted);font-size:.72rem;text-align:right}
+  .btn-ghost {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-size: 0.84rem;
+    font-weight: 600;
+    transition: background .15s, border-color .15s;
+  }
+  .btn-ghost:hover {
+    background: var(--surface-2);
+    border-color: var(--ink);
+  }
 
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:3px;border:1px solid var(--line);border-radius:10px;background:#f5f7fb}
-.seg button{min-height:34px;border:0;border-radius:7px;background:transparent;color:#64748b;font-size:.76rem;font-weight:650;transition:.16s}
-.seg button:hover{background:#e8eef8;color:var(--ink)}
-.seg button.active{background:var(--ink);color:#fff;box-shadow:0 2px 5px #172b4d20}
+  /* Notice bar */
+  #notice {
+    display: none;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: #FBEED0;
+    border: 1px solid #E5C77A;
+    color: #5E4005;
+    font-size: 0.84rem;
+  }
+  #notice.show { display: block; }
 
-.sched{margin-top:10px;padding-top:11px;border-top:1px solid var(--line)}
-.sched .lbl{margin-bottom:8px;color:#425875;font-size:.77rem;font-weight:650}
-.sched .times{display:flex;align-items:end;flex-wrap:wrap;gap:7px}
-.sched label{display:grid;gap:4px;color:var(--muted);font-size:.72rem;font-weight:600}
-.sched input[type=time]{width:100%;min-height:34px;padding:0 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);font-size:.78rem}
-.sched .go{min-height:34px;padding:0 13px;border:0;border-radius:8px;background:var(--primary);color:#fff;font-size:.76rem;font-weight:700;transition:.18s}
-.sched .go:hover{background:#1d4ed8}
+  /* Modal cài đặt */
+  #settingsBackdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(22, 38, 42, 0.35);
+    backdrop-filter: blur(2px);
+    z-index: 40;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #settingsBackdrop.open { display: flex; }
+  #settings {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: 0 16px 40px rgba(22, 38, 42, 0.18);
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .modal-head h2 { margin: 0; font-size: 1.05rem; }
+  #settings label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  #settings input {
+    width: 100%;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.88rem;
+  }
+  #settings .row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  #settings small { font-size: 0.76rem; color: var(--muted); max-width: 240px; }
+  .btn-primary {
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 9px;
+    border: 0;
+    background: var(--ink);
+    color: var(--surface);
+    font-size: 0.84rem;
+    font-weight: 600;
+  }
+  .btn-primary:hover { opacity: 0.92; }
 
-#toast{position:fixed;left:50%;bottom:22px;z-index:30;max-width:90vw;padding:11px 16px;transform:translateX(-50%);border-radius:10px;background:var(--ink);color:#fff;font-size:.82rem;box-shadow:0 8px 24px #172b4d30;opacity:0;pointer-events:none;transition:opacity .2s}
-#toast.show{opacity:1}
+  /* Grid chính */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .col-left, .col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .card h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .card-sub {
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
 
-@media(min-width:1200px) and (min-height:760px){
-  .wrap{height:100vh;display:flex;flex-direction:column;gap:0;overflow:hidden}
-  header,#notice,#settings{flex-shrink:0}
-  .layout{flex:1;min-height:0}
-  .panel{min-height:0;overflow:auto}
-  .stack .panel{overflow:auto}
-  .panel svg{max-height:43vh;width:auto;max-width:100%}
-}
-@media(max-width:1199px){
-  .wrap{padding:18px}
-  .layout{grid-template-columns:minmax(230px,.9fr) minmax(320px,1.1fr)}
-  .stack{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}
-}
-@media(max-width:700px){
-  .wrap{padding:12px}
-  header{gap:10px}
-  .brand{flex-basis:100%}
-  h1{font-size:1.25rem}
-  .header-actions{width:100%;justify-content:space-between}
-  .layout,.stack{grid-template-columns:1fr}
-  .stack{grid-column:auto}
-  .panel{padding:14px}
-  .panel svg{max-width:330px}
-  .row-dev .info{font-size:.69rem}
-  .seg button{min-height:39px}
-  .sched .times{align-items:stretch}
-  .sched label{flex:1;min-width:105px}
-  .sched .go{align-self:end}
-}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  /* Mặt bằng */
+  .floor-box {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  svg { width: 100%; height: auto; display: block; }
+  .wall { fill: none; stroke: var(--ink); stroke-width: 2.8; }
+  .gap { fill: var(--surface-2); }
+  .halo { fill: var(--lamp); opacity: 0; transition: opacity .22s; }
+  .core { fill: #D5DBD4; stroke: #7C8D91; stroke-width: 1.5; transition: fill .22s, stroke .22s; }
+  .lamp.on .halo { opacity: .45; }
+  .lamp.on .core { fill: var(--lamp); stroke: var(--warm); }
+  .ring { fill: none; stroke: var(--live); stroke-width: 2.4; stroke-dasharray: 4 3.5; opacity: 0; }
+  .lamp.here .ring { opacity: 1; }
+  .tag { font-size: 10.5px; font-weight: 600; fill: var(--muted); text-anchor: middle; }
+  .temp { font-size: 32px; font-weight: 750; text-anchor: middle; fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .temp.warm { fill: var(--warm); }
+  .temp.hot { fill: var(--hot); }
+  .unit { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+  .acbox rect { fill: #D5DBD4; stroke: #7C8D91; stroke-width: 1.5; transition: fill .22s, stroke .22s; }
+  .acbox line { stroke: #7C8D91; stroke-width: 1.5; }
+  .acbox.on rect { fill: #8ECDF0; stroke: var(--cool); }
+  .acbox.on line { stroke: var(--cool); }
+
+  .chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .chip {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .chip.run { background: var(--live-soft); border-color: #9BD5CC; color: #0F5E54; }
+  .chip.cool { background: var(--cool-soft); border-color: #9ECAE3; color: #175578; }
+  .chip.alert { background: var(--hot-soft); border-color: #E8ABA5; color: #8E231C; }
+
+  .hint {
+    margin: 8px 0 0;
+    font-size: 0.76rem;
+    color: var(--muted);
+  }
+
+  /* Điều khiển 4 cửa dạng lưới 2x2 */
+  .doors-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .dev-tile {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .dev-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .dev-top b { font-size: 0.86rem; font-weight: 700; }
+  .dev-info {
+    font-size: 0.73rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .seg button {
+    min-height: 34px;
+    padding: 0 4px;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: transparent;
+    font-size: 0.78rem;
+    font-weight: 500;
+    transition: background .12s, color .12s;
+  }
+  .seg button:first-child { border-left: 0; }
+  .seg button:hover { background: #E3E8E1; }
+  .seg button.active {
+    background: var(--ink);
+    color: var(--surface);
+    font-weight: 600;
+  }
+
+  /* Quạt & cảnh báo */
+  .auto-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .auto-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 7px 10px;
+  }
+  .auto-row .seg { width: 204px; }
+
+  /* Điều hòa & lịch */
+  .ac-panel-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .sched-box {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .sched-lbl {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .sched-form {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sched-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.73rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .sched-form input[type="time"] {
+    height: 34px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.82rem;
+  }
+  .sched-form .btn-primary {
+    height: 34px;
+    padding: 0 14px;
+    font-size: 0.8rem;
+  }
+
+  /* Desktop 1 màn hình không cuộn */
+  @media (min-width: 960px) {
+    html, body {
+      height: 100dvh;
+      overflow: hidden;
+    }
+    .app {
+      height: 100%;
+      padding: 10px 14px;
+      gap: 9px;
+    }
+    .topbar {
+      padding: 7px 14px;
+      border-radius: 12px;
+    }
+    h1 { font-size: 1.08rem; }
+    .pill { padding: 3px 10px; font-size: 0.78rem; }
+    .btn-ghost { height: 30px; padding: 0 11px; font-size: 0.8rem; }
+
+    #notice { padding: 6px 12px; font-size: 0.78rem; }
+
+    .main-grid {
+      flex: 1;
+      min-height: 0;
+      grid-template-columns: 0.96fr 1.24fr;
+      gap: 10px;
+    }
+    .col-left, .col-right {
+      min-height: 0;
+      gap: 9px;
+    }
+    .card {
+      padding: 10px 12px;
+      border-radius: 12px;
+    }
+    .col-left .card {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-head { margin-bottom: 7px; }
+    .card h2 { font-size: 0.88rem; }
+    .card-sub { font-size: 0.72rem; }
+
+    .floor-box {
+      flex: 1;
+      min-height: 0;
+      padding: 6px;
+      border-radius: 10px;
+    }
+    .floor-box svg {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+    }
+    .chips { margin-top: 7px; gap: 5px; }
+    .chip { padding: 3px 8px; font-size: 0.73rem; }
+    .hint { margin: 5px 0 0; font-size: 0.71rem; }
+
+    .doors-grid { gap: 7px; }
+    .dev-tile { padding: 6px 8px; gap: 4px; border-radius: 9px; }
+    .dev-top b { font-size: 0.81rem; }
+    .dev-info { font-size: 0.7rem; }
+    .seg button { min-height: 29px; font-size: 0.74rem; }
+
+    .auto-list { gap: 6px; }
+    .auto-row { padding: 5px 9px; border-radius: 9px; }
+    .auto-row .seg { width: 186px; }
+
+    .ac-panel-body {
+      grid-template-columns: 1.05fr 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .ac-panel-body .dev-tile { height: 100%; justify-content: center; }
+    .sched-box { padding: 6px 9px; border-radius: 9px; }
+    .sched-lbl { font-size: 0.72rem; margin-bottom: 4px; }
+    .sched-form { gap: 6px; }
+    .sched-form label { font-size: 0.7rem; }
+    .sched-form input[type="time"] { height: 29px; font-size: 0.76rem; }
+    .sched-form .btn-primary { height: 29px; padding: 0 12px; font-size: 0.76rem; }
+  }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--surface);
+    padding: 9px 15px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+    max-width: 90vw;
+    z-index: 50;
+  }
+  #toast.show { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
 </head>
 <body>
-<div class="wrap">
-
-  <header>
+<div class="app">
+  <header class="topbar">
     <div class="brand">
-      <div class="brand-mark">⌂</div>
-      <div>
-        <h1>Smart Home</h1>
-        <div class="subtitle">HỆ THỐNG GIÁM SÁT VÀ ĐIỀU KHIỂN NHÀ THÔNG MINH</div>
-      </div>
+      <span class="brand-mark" aria-hidden="true"></span>
+      <h1>Nhà thông minh</h1>
     </div>
-
-    <div class="header-actions">
-      <span class="pill wait" id="conn">
-        <span class="dot"></span>
-        <span id="connText">Đang kết nối…</span>
-      </span>
-      <button class="ghost" id="gear" aria-expanded="false" aria-controls="settings">
-        ⚙ Cài đặt
-      </button>
+    <div class="topbar-right">
+      <span class="pill wait" id="conn"><span class="dot"></span><span id="connText">Đang kết nối…</span></span>
+      <button class="btn-ghost" id="gear" aria-expanded="false" aria-controls="settings">Cài đặt</button>
     </div>
   </header>
 
-  <section id="settings">
-    <label for="baseIn">Tiền tố topic (phải giống BASE trong bridge.py)</label>
-    <input id="baseIn" autocomplete="off" spellcheck="false">
-
-    <label for="brokerIn">Địa chỉ broker (WebSocket)</label>
-    <input id="brokerIn" autocomplete="off" spellcheck="false">
-
-    <div class="row">
-      <button class="save" id="saveBtn">Lưu và kết nối lại</button>
-      <small>Broker công cộng ai cũng đọc được topic, hãy đặt tiền tố riêng của bạn.</small>
-    </div>
-  </section>
-
   <div id="notice" role="status"></div>
 
-  <div class="layout">
+  <main class="main-grid">
+    <section class="col-left">
+      <div class="card">
+        <div class="card-head">
+          <h2>Mặt bằng ngôi nhà</h2>
+          <span class="card-sub" id="clockSub">Giờ nhà: --:--</span>
+        </div>
+        <div class="floor-box">
+          <svg viewBox="0 0 320 232" role="img" aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn và cảm biến người, và một điều hòa">
+            <rect class="wall" x="40" y="26" width="240" height="180" rx="6"/>
+            <rect class="gap" x="142" y="22" width="36" height="8"/>
+            <rect class="gap" x="142" y="202" width="36" height="8"/>
+            <rect class="gap" x="36" y="98" width="8" height="36"/>
+            <rect class="gap" x="276" y="98" width="8" height="36"/>
 
-    <!-- TỔNG QUAN NGÔI NHÀ -->
-    <section class="panel">
-      <h2>
-        <span class="section-icon">⌂</span>
-        Tổng quan ngôi nhà
-      </h2>
+            <g class="lamp" id="lamp0" transform="translate(160 50)"><circle class="halo" r="30"/><circle class="ring" r="16.5"/><circle class="core" r="8.5"/></g>
+            <text class="tag" x="160" y="80">Cửa 1</text>
 
-      <svg viewBox="0 0 320 240" role="img"
-        aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn và cảm biến người, và một điều hòa">
+            <g class="lamp" id="lamp1" transform="translate(256 116)"><circle class="halo" r="30"/><circle class="ring" r="16.5"/><circle class="core" r="8.5"/></g>
+            <text class="tag" x="256" y="145">Cửa 2</text>
 
-        <rect class="wall" x="40" y="30" width="240" height="180" rx="6"/>
-        <rect class="gap" x="142" y="26" width="36" height="8"/>
-        <rect class="gap" x="142" y="206" width="36" height="8"/>
-        <rect class="gap" x="36" y="102" width="8" height="36"/>
-        <rect class="gap" x="276" y="102" width="8" height="36"/>
+            <g class="lamp" id="lamp2" transform="translate(160 182)"><circle class="halo" r="30"/><circle class="ring" r="16.5"/><circle class="core" r="8.5"/></g>
+            <text class="tag" x="160" y="166">Cửa 3</text>
 
-        <g class="lamp" id="lamp0" transform="translate(160 54)">
-          <circle class="halo" r="32"/>
-          <circle class="ring" r="17"/>
-          <circle class="core" r="9"/>
-        </g>
-        <text class="tag" x="160" y="84">Cửa 1</text>
+            <g class="lamp" id="lamp3" transform="translate(64 116)"><circle class="halo" r="30"/><circle class="ring" r="16.5"/><circle class="core" r="8.5"/></g>
+            <text class="tag" x="64" y="145">Cửa 4</text>
 
-        <g class="lamp" id="lamp1" transform="translate(256 120)">
-          <circle class="halo" r="32"/>
-          <circle class="ring" r="17"/>
-          <circle class="core" r="9"/>
-        </g>
-        <text class="tag" x="256" y="150">Cửa 2</text>
+            <g class="acbox" id="acUnit">
+              <rect x="60" y="38" width="54" height="15" rx="4"/>
+              <line x1="68" y1="46.5" x2="106" y2="46.5"/>
+            </g>
+            <text class="tag" x="87" y="68">Điều hòa</text>
 
-        <g class="lamp" id="lamp2" transform="translate(160 186)">
-          <circle class="halo" r="32"/>
-          <circle class="ring" r="17"/>
-          <circle class="core" r="9"/>
-        </g>
-        <text class="tag" x="160" y="170">Cửa 3</text>
+            <text class="temp" id="temp" x="160" y="121">--</text>
+            <text class="unit" x="160" y="138">nhiệt độ trong nhà (°C)</text>
+          </svg>
+        </div>
 
-        <g class="lamp" id="lamp3" transform="translate(64 120)">
-          <circle class="halo" r="32"/>
-          <circle class="ring" r="17"/>
-          <circle class="core" r="9"/>
-        </g>
-        <text class="tag" x="64" y="150">Cửa 4</text>
+        <div class="chips">
+          <span class="chip" id="chipF1">Quạt 1: --</span>
+          <span class="chip" id="chipF2">Quạt 2: --</span>
+          <span class="chip" id="chipW1">Cảnh báo: --</span>
+          <span class="chip" id="chipAC">Điều hòa: --</span>
+          <span class="chip" id="chipTime">Giờ nhà: --:--</span>
+        </div>
+        <p class="hint">Vòng nét đứt xanh = cảm biến cửa đang có người. Quạt &amp; cảnh báo tự bật khi ≥ 35°C.</p>
+      </div>
+    </section>
 
-        <g class="acbox" id="acUnit">
-          <rect x="62" y="42" width="54" height="16" rx="4"/>
-          <line x1="70" y1="51" x2="108" y2="51"/>
-        </g>
-        <text class="tag" x="89" y="74">Điều hòa</text>
-
-        <text class="temp" id="temp" x="160" y="125">--</text>
-        <text class="unit" x="160" y="142">nhiệt độ trong nhà (°C)</text>
-      </svg>
-
-      <div class="chips">
-        <span class="chip" id="chipF1">Quạt 1: --</span>
-        <span class="chip" id="chipF2">Quạt 2: --</span>
-        <span class="chip" id="chipW1">Cảnh báo: --</span>
-        <span class="chip" id="chipAC">Điều hòa: --</span>
-        <span class="chip" id="chipTime">Giờ nhà: --:--</span>
+    <section class="col-right">
+      <div class="card">
+        <div class="card-head">
+          <h2>Đèn ở các cửa</h2>
+          <span class="card-sub">Tự động tắt sau 10s hết người</span>
+        </div>
+        <div class="doors-grid" id="lamps"></div>
       </div>
 
-      <p class="hint">
-        Vòng nét đứt màu xanh nghĩa là cảm biến ở cửa đó đang thấy có người.
-      </p>
-    </section>
-
-    <!-- ĐIỀU KHIỂN ĐÈN -->
-    <section class="panel">
-      <h2>
-        <span class="section-icon">☼</span>
-        Điều khiển đèn
-      </h2>
-
-      <div id="lamps"></div>
-
-      <p class="hint">
-        “Tự động”: đèn bật khi cảm biến ở cửa thấy người và tắt sau 10 giây khi hết người.
-      </p>
-    </section>
-
-    <!-- QUẠT VÀ ĐIỀU HÒA -->
-    <div class="stack">
-
-      <section class="panel">
-        <h2>
-          <span class="section-icon">✣</span>
-          Quạt và cảnh báo
-        </h2>
-
-        <div id="autos"></div>
-
-        <p class="hint">
-          “Tự động” để thiết bị chạy theo nhiệt độ. Khi nhiệt độ từ 35°C trở lên,
-          quạt và cảnh báo tự bật dù đang để Tắt.
-        </p>
-      </section>
-
-      <section class="panel">
-        <h2>
-          <span class="section-icon">❄</span>
-          Điều hòa
-        </h2>
-
-        <div id="acrow"></div>
-
-        <div class="sched">
-          <div class="lbl" id="schedLabel">Lịch: chưa có dữ liệu</div>
-
-          <div class="times">
-            <label>
-              Bật lúc
-              <input type="time" id="schedFrom" value="22:00">
-            </label>
-
-            <label>
-              Tắt lúc
-              <input type="time" id="schedTo" value="06:00">
-            </label>
-
-            <button class="go" id="schedSave">Đặt lịch</button>
-          </div>
-
-          <p class="hint">
-            Ở chế độ “Theo lịch”, điều hòa tự bật và tắt mỗi ngày
-            theo giờ thực của máy chạy bridge.py.
-          </p>
+      <div class="card">
+        <div class="card-head">
+          <h2>Quạt và cảnh báo</h2>
+          <span class="card-sub">Tự động theo nhiệt độ</span>
         </div>
-      </section>
+        <div class="auto-list" id="autos"></div>
+      </div>
 
+      <div class="card">
+        <div class="card-head">
+          <h2>Điều hòa &amp; Lịch trình</h2>
+          <span class="card-sub">Theo giờ thực của bridge.py</span>
+        </div>
+        <div class="ac-panel-body">
+          <div id="acrow"></div>
+          <div class="sched-box">
+            <div class="sched-lbl" id="schedLabel">Lịch: chưa có dữ liệu</div>
+            <div class="sched-form">
+              <label>Bật lúc<input type="time" id="schedFrom" value="22:00"></label>
+              <label>Tắt lúc<input type="time" id="schedTo" value="06:00"></label>
+              <button class="btn-primary" id="schedSave">Đặt lịch</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="settingsBackdrop" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <section id="settings">
+    <div class="modal-head">
+      <h2 id="settingsTitle">Cài đặt kết nối MQTT</h2>
+      <button class="btn-ghost" id="closeSettings" type="button">Đóng</button>
     </div>
-  </div>
+    <label for="baseIn">Tiền tố topic (phải giống BASE trong bridge.py)</label>
+    <input id="baseIn" autocomplete="off" spellcheck="false">
+    <label for="brokerIn">Địa chỉ broker (WebSocket)</label>
+    <input id="brokerIn" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <small>Broker công cộng ai cũng đọc được topic, hãy đặt tiền tố riêng của bạn.</small>
+      <button class="btn-primary" id="saveBtn" type="button">Lưu &amp; kết nối lại</button>
+    </div>
+  </section>
 </div>
 
 <div id="toast" role="status"></div>
 
-  <script>
+<script>
 (function () {
-  var $ = function (s) {
-    return document.querySelector(s);
-  };
-
+  var $ = function (s) { return document.querySelector(s); };
   var store = {
-    get: function (k, d) {
-      try {
-        return localStorage.getItem(k) || d;
-      } catch (e) {
-        return d;
-      }
-    },
-    set: function (k, v) {
-      try {
-        localStorage.setItem(k, v);
-      } catch (e) {}
-    }
+    get: function (k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   };
 
   var base = store.get('base', 'smarthome/kiet01');
@@ -335,24 +655,16 @@ h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;padding-bottom:11px;b
   var schedEditing = false;
 
   var data;
-
   function resetData() {
     data = {
       T: null,
       L: [null, null, null, null],
       P: [null, null, null, null],
-      F: [null, null],
-      W: null,
-      AC: null,
-      M: {
-        L1: null, L2: null, L3: null, L4: null,
-        F1: null, F2: null, W1: null, AC: null
-      },
-      TIME: null,
-      SCHED: null
+      F: [null, null], W: null, AC: null,
+      M: { L1: null, L2: null, L3: null, L4: null, F1: null, F2: null, W1: null, AC: null },
+      TIME: null, SCHED: null
     };
   }
-
   resetData();
 
   var AUTOS = [
@@ -363,95 +675,55 @@ h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;padding-bottom:11px;b
 
   function segHtml(id, labels) {
     var h = '<div class="seg" role="group" aria-label="' + id + '">';
-
     labels.forEach(function (l) {
-      h += '<button data-dev="' + id + '" data-v="' + l[0] + '">' + l[1] + '</button>';
+      h += '<button type="button" data-dev="' + id + '" data-v="' + l[0] + '">' + l[1] + '</button>';
     });
-
     return h + '</div>';
   }
 
-  function rowHtml(id, title, labels) {
-    return '<div class="row-dev">' +
-      '<div class="top">' +
-      '<b>' + title + '</b>' +
-      '<span class="info" id="info-' + id + '">Chưa có dữ liệu</span>' +
-      '</div>' +
-      segHtml(id, labels) +
-      '</div>';
+  function doorTileHtml(id, title, labels) {
+    return (
+      '<div class="dev-tile">' +
+        '<div class="dev-top"><b>' + title + '</b><span class="dev-info" id="info-' + id + '">Chưa có dữ liệu</span></div>' +
+        segHtml(id, labels) +
+      '</div>'
+    );
   }
 
-  // TẠO 4 HÀNG ĐIỀU KHIỂN ĐÈN
+  function autoRowHtml(id, title, labels) {
+    return (
+      '<div class="auto-row">' +
+        '<div class="dev-top" style="margin:0;flex-direction:column;gap:2px;"><b>' + title + '</b><span class="dev-info" id="info-' + id + '">Chưa có dữ liệu</span></div>' +
+        segHtml(id, labels) +
+      '</div>'
+    );
+  }
 
   var html = '', i;
-
   for (i = 1; i <= 4; i++) {
-    html += rowHtml(
-      'L' + i,
-      'Cửa ' + i + ' (L' + i + ')',
-      [
-        ['1', 'Bật'],
-        ['0', 'Tắt'],
-        ['AUTO', 'Tự động']
-      ]
-    );
+    html += doorTileHtml('L' + i, 'Cửa ' + i + ' (L' + i + ')', [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Tự động']]);
   }
-
   $('#lamps').innerHTML = html;
 
-  // TẠO ĐIỀU KHIỂN QUẠT VÀ CẢNH BÁO
-
   html = '';
-
   AUTOS.forEach(function (a) {
-    html += rowHtml(
-      a.id,
-      a.name,
-      [
-        ['1', 'Bật'],
-        ['0', 'Tắt'],
-        ['AUTO', 'Tự động']
-      ]
-    );
+    html += autoRowHtml(a.id, a.name, [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Tự động']]);
   });
-
   $('#autos').innerHTML = html;
 
-  // ĐIỀU KHIỂN ĐIỀU HÒA
-
-  $('#acrow').innerHTML = rowHtml(
-    'AC',
-    'Điều hòa (AC)',
-    [
-      ['1', 'Bật'],
-      ['0', 'Tắt'],
-      ['AUTO', 'Theo lịch']
-    ]
-  );
-
-  // XỬ LÝ NÚT ĐIỀU KHIỂN
+  $('#acrow').innerHTML = doorTileHtml('AC', 'Điều hòa (AC)', [['1', 'Bật'], ['0', 'Tắt'], ['AUTO', 'Theo lịch']]);
 
   document.addEventListener('click', function (e) {
     var b = e.target.closest('button[data-dev]');
-
-    if (b) {
-      send(b.dataset.dev, b.dataset.v);
-    }
+    if (b) send(b.dataset.dev, b.dataset.v);
   });
-
-  // THÔNG BÁO
 
   function toast(msg) {
     var t = $('#toast');
-
     t.textContent = msg;
     t.classList.add('show');
-
     clearTimeout(toast.t);
-
-    toast.t = setTimeout(function () {
-      t.classList.remove('show');
-    }, 2200);
+    toast.t = setTimeout(function () { t.classList.remove('show'); }, 2200);
   }
 
   function nameOf(dev) {
@@ -459,218 +731,91 @@ h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;padding-bottom:11px;b
     if (dev === 'F1') return 'Quạt 1';
     if (dev === 'F2') return 'Quạt 2';
     if (dev === 'W1') return 'Đèn cảnh báo';
-
     return 'Điều hòa';
   }
 
-  // GỬI LỆNH MQTT
-
   function send(dev, v) {
-    if (!client || !client.connected) {
-      toast('Chưa kết nối broker, chưa gửi được lệnh.');
-      return;
-    }
-
+    if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lệnh.'); return; }
     client.publish(base + '/cmd/' + dev, v);
-
     data.M[dev] = (v === 'AUTO') ? 'A' : v;
-
-    if (dev[0] === 'L' && v !== 'AUTO') {
-      data.L[+dev[1] - 1] = v;
-    }
-
+    if (dev[0] === 'L' && v !== 'AUTO') data.L[+dev[1] - 1] = v;
     render();
-
-    toast(
-      'Đã gửi: ' + nameOf(dev) + ' → ' +
-      (v === '1' ? 'Bật' :
-       v === '0' ? 'Tắt' :
-       (dev === 'AC' ? 'Theo lịch' : 'Tự động'))
-    );
+    toast('Đã gửi: ' + nameOf(dev) + ' → ' + (v === '1' ? 'Bật' : v === '0' ? 'Tắt' : (dev === 'AC' ? 'Theo lịch' : 'Tự động')));
   }
-
-  // TRẠNG THÁI KẾT NỐI
 
   function setConn(state, text) {
     conn = state;
-
     $('#conn').className = 'pill ' + state;
     $('#connText').textContent = text;
   }
 
-  function onoff(s, on, off) {
-    return s === null ? '--' : (s === '1' ? on : off);
-  }
-
-  var MODE_TXT = {
-    A: 'tự động',
-    '1': 'bật tay',
-    '0': 'tắt tay'
-  };
+  function onoff(s, on, off) { return s === null ? '--' : (s === '1' ? on : off); }
+  var MODE_TXT = { A: 'tự động', '1': 'bật tay', '0': 'tắt tay' };
 
   function stateOf(id) {
     if (id[0] === 'L') return data.L[+id[1] - 1];
     if (id[0] === 'F') return data.F[+id[1] - 1];
     if (id === 'W1') return data.W;
-
     return data.AC;
   }
 
   function setChip(id, text, cls) {
     var c = $('#' + id);
-
     c.textContent = text;
     c.className = 'chip' + (cls ? ' ' + cls : '');
   }
 
-  // CẬP NHẬT GIAO DIỆN
-
   function render() {
     var t = $('#temp');
-
     if (data.T === null) {
       t.textContent = '--';
       t.setAttribute('class', 'temp');
     } else {
       t.textContent = data.T.toFixed(1);
-
-      t.setAttribute(
-        'class',
-        'temp' +
-        (data.T >= 30 ? ' hot' :
-         data.T >= 25 ? ' warm' : '')
-      );
+      t.setAttribute('class', 'temp' + (data.T >= 30 ? ' hot' : data.T >= 25 ? ' warm' : ''));
     }
-
-    // TRẠNG THÁI 4 ĐÈN
 
     for (var i = 0; i < 4; i++) {
       var id = 'L' + (i + 1);
-
-      $('#lamp' + i).setAttribute(
-        'class',
-        'lamp' +
-        (data.L[i] === '1' ? ' on' : '') +
-        (data.P[i] === '1' ? ' here' : '')
-      );
-
-      var s = data.L[i];
-      var m = data.M[id];
-
-      var txt = s === null
-        ? 'Chưa có dữ liệu'
-        : (s === '1' ? 'Đèn sáng' : 'Đèn tắt');
-
-      if (data.P[i] === '1') {
-        txt += ' · có người';
-      }
-
-      if (m !== null && s !== null) {
-        txt += ' · ' + (m === 'A' ? 'theo cảm biến' : MODE_TXT[m]);
-      }
-
+      $('#lamp' + i).setAttribute('class', 'lamp' + (data.L[i] === '1' ? ' on' : '') + (data.P[i] === '1' ? ' here' : ''));
+      var s = data.L[i], m = data.M[id];
+      var txt = s === null ? 'Chưa có dữ liệu' : (s === '1' ? 'Đèn sáng' : 'Đèn tắt');
+      if (data.P[i] === '1') txt += ' · có người';
+      if (m !== null && s !== null) txt += ' · ' + (m === 'A' ? 'cảm biến' : MODE_TXT[m]);
       $('#info-' + id).textContent = txt;
     }
 
-    // ĐIỀU HÒA TRÊN SƠ ĐỒ
-
-    $('#acUnit').setAttribute(
-      'class',
-      'acbox' + (data.AC === '1' ? ' on' : '')
-    );
-
-    // QUẠT VÀ CẢNH BÁO
+    $('#acUnit').setAttribute('class', 'acbox' + (data.AC === '1' ? ' on' : ''));
 
     ['F1', 'F2', 'W1'].forEach(function (id) {
-      var s = stateOf(id);
-      var m = data.M[id];
-
-      var txt = s === null
-        ? 'Chưa có dữ liệu'
-        : (
-          id === 'W1'
-            ? (s === '1' ? 'Đang cảnh báo' : 'Không cảnh báo')
-            : (s === '1' ? 'Đang chạy' : 'Đang tắt')
-        );
-
-      if (m !== null && s !== null) {
-        txt += ' · ' + MODE_TXT[m];
-      }
-
+      var s = stateOf(id), m = data.M[id];
+      var txt = s === null ? 'Chưa có dữ liệu' : (id === 'W1' ? (s === '1' ? 'Đang cảnh báo' : 'Bình thường') : (s === '1' ? 'Đang chạy' : 'Đang tắt'));
+      if (m !== null && s !== null) txt += ' · ' + MODE_TXT[m];
       $('#info-' + id).textContent = txt;
     });
 
-    // TRẠNG THÁI ĐIỀU HÒA
-
-    var acTxt = data.AC === null
-      ? 'Chưa có dữ liệu'
-      : (data.AC === '1' ? 'Đang bật' : 'Đang tắt');
-
-    if (data.M.AC !== null && data.AC !== null) {
-      acTxt += ' · ' +
-        (data.M.AC === 'A' ? 'theo lịch' : MODE_TXT[data.M.AC]);
-    }
-
+    var acTxt = data.AC === null ? 'Chưa có dữ liệu' : (data.AC === '1' ? 'Đang bật' : 'Đang tắt');
+    if (data.M.AC !== null && data.AC !== null) acTxt += ' · ' + (data.M.AC === 'A' ? 'theo lịch' : MODE_TXT[data.M.AC]);
     $('#info-AC').textContent = acTxt;
 
-    // ĐÁNH DẤU NÚT ĐANG ĐƯỢC CHỌN
-
     var btns = document.querySelectorAll('button[data-dev]');
-
     for (var k = 0; k < btns.length; k++) {
-      var d = btns[k].dataset.dev;
-      var v = btns[k].dataset.v;
-      var m2 = data.M[d];
-
+      var d = btns[k].dataset.dev, v = btns[k].dataset.v, m2 = data.M[d];
       var active = (m2 === 'A' && v === 'AUTO') || m2 === v;
-
       btns[k].classList.toggle('active', !!active);
     }
 
-    // CẬP NHẬT CÁC THẺ TRẠNG THÁI
-
-    setChip(
-      'chipF1',
-      'Quạt 1: ' + onoff(data.F[0], 'chạy', 'tắt'),
-      data.F[0] === '1' ? 'run' : ''
-    );
-
-    setChip(
-      'chipF2',
-      'Quạt 2: ' + onoff(data.F[1], 'chạy', 'tắt'),
-      data.F[1] === '1' ? 'run' : ''
-    );
-
-    setChip(
-      'chipW1',
-      'Cảnh báo: ' +
-      (data.W === null ? '--' :
-       data.W === '1' ? 'nhiệt độ cao' : 'bình thường'),
-      data.W === '1' ? 'alert' : ''
-    );
-
-    setChip(
-      'chipAC',
-      'Điều hòa: ' + onoff(data.AC, 'bật', 'tắt'),
-      data.AC === '1' ? 'cool' : ''
-    );
-
-    setChip(
-      'chipTime',
-      'Giờ nhà: ' +
-      (data.TIME && data.TIME !== '--:--' ? data.TIME : '--:--'),
-      ''
-    );
-
-    // HIỂN THỊ LỊCH ĐIỀU HÒA
+    var timeStr = (data.TIME && data.TIME !== '--:--') ? data.TIME : '--:--';
+    setChip('chipF1', 'Quạt 1: ' + onoff(data.F[0], 'chạy', 'tắt'), data.F[0] === '1' ? 'run' : '');
+    setChip('chipF2', 'Quạt 2: ' + onoff(data.F[1], 'chạy', 'tắt'), data.F[1] === '1' ? 'run' : '');
+    setChip('chipW1', 'Cảnh báo: ' + (data.W === null ? '--' : data.W === '1' ? 'nhiệt độ cao' : 'bình thường'), data.W === '1' ? 'alert' : '');
+    setChip('chipAC', 'Điều hòa: ' + onoff(data.AC, 'bật', 'tắt'), data.AC === '1' ? 'cool' : '');
+    setChip('chipTime', 'Giờ nhà: ' + timeStr, '');
+    $('#clockSub').textContent = 'Giờ nhà: ' + timeStr;
 
     if (data.SCHED) {
       var p = data.SCHED.split('-');
-
-      $('#schedLabel').textContent =
-        'Lịch hiện tại: bật lúc ' + p[0] +
-        ', tắt lúc ' + p[1] + ' mỗi ngày';
-
+      $('#schedLabel').textContent = 'Lịch: bật ' + p[0] + ' · tắt ' + p[1] + ' mỗi ngày';
       if (!schedEditing && p.length === 2) {
         $('#schedFrom').value = p[0];
         $('#schedTo').value = p[1];
@@ -678,210 +823,112 @@ h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;padding-bottom:11px;b
     }
   }
 
-  // KIỂM TRA DỮ LIỆU MQTT
-
   function updateNotice() {
     var n = $('#notice');
     var live = Date.now() - lastLive < 8000;
-
     if (conn === 'on' && !live) {
-      n.textContent =
-        'Đã kết nối broker nhưng chưa nhận tín hiệu mới từ nhà. ' +
-        'Kiểm tra bridge.py và Proteus đang chạy, và tiền tố topic khớp với BASE. ' +
-        'Số liệu đang hiển thị có thể là dữ liệu cũ.';
-
+      n.textContent = 'Đã kết nối broker nhưng chưa nhận tín hiệu mới từ nhà. Kiểm tra bridge.py và Proteus đang chạy, và tiền tố topic khớp với BASE.';
       n.classList.add('show');
-
     } else if (conn === 'off') {
-      n.textContent =
-        'Mất kết nối tới broker. App sẽ tự thử lại, ' +
-        'hoặc kiểm tra Internet và địa chỉ broker trong Cài đặt.';
-
+      n.textContent = 'Mất kết nối tới broker. App sẽ tự thử lại, hoặc kiểm tra Internet và địa chỉ broker trong Cài đặt.';
       n.classList.add('show');
-
     } else {
       n.classList.remove('show');
     }
   }
 
-  // KẾT NỐI MQTT
-
   function connect() {
     if (typeof mqtt === 'undefined') {
       setConn('off', 'Lỗi thư viện');
-
-      $('#notice').textContent =
-        'Không tải được thư viện MQTT. Hãy kiểm tra Internet rồi tải lại trang.';
-
+      $('#notice').textContent = 'Không tải được thư viện MQTT. Hãy kiểm tra Internet rồi tải lại trang.';
       $('#notice').classList.add('show');
       return;
     }
-
-    if (client) {
-      client.end(true);
-      client = null;
-    }
-
+    if (client) { client.end(true); client = null; }
     setConn('wait', 'Đang kết nối…');
-
     client = mqtt.connect(broker, {
       clientId: 'web_' + Math.random().toString(16).slice(2, 10),
       reconnectPeriod: 3000,
       connectTimeout: 8000
     });
-
     client.on('connect', function () {
       setConn('on', 'Đã kết nối');
-
       client.subscribe(base + '/state/#');
-
       updateNotice();
     });
-
-    client.on('reconnect', function () {
-      setConn('wait', 'Đang kết nối lại…');
-    });
-
-    client.on('close', function () {
-      setConn('off', 'Mất kết nối');
-      updateNotice();
-    });
-
-    client.on('error', function () {
-      setConn('off', 'Lỗi kết nối');
-      updateNotice();
-    });
-
-    // NHẬN DỮ LIỆU TỪ BROKER
-
+    client.on('reconnect', function () { setConn('wait', 'Đang kết nối lại…'); });
+    client.on('close', function () { setConn('off', 'Mất kết nối'); updateNotice(); });
+    client.on('error', function () { setConn('off', 'Lỗi kết nối'); updateNotice(); });
     client.on('message', function (topic, payload, packet) {
       var key = topic.split('/').pop();
       var v = payload.toString().trim();
       var m;
-
-      if (key === 'T1') {
-        var n = parseFloat(v);
-        data.T = isNaN(n) ? null : n;
-
-      } else if ((m = /^L([1-4])$/.exec(key))) {
-        data.L[m[1] - 1] = v;
-
-      } else if ((m = /^P([1-4])$/.exec(key))) {
-        data.P[m[1] - 1] = v;
-
-      } else if ((m = /^F([1-2])$/.exec(key))) {
-        data.F[m[1] - 1] = v;
-
-      } else if (key === 'W1') {
-        data.W = v;
-
-      } else if (key === 'AC') {
-        data.AC = v;
-
-      } else if ((m = /^M(L[1-4]|F1|F2|W1|AC)$/.exec(key))) {
-        data.M[m[1]] = v;
-
-      } else if (key === 'TIME') {
-        data.TIME = v;
-
-      } else if (key === 'SCHED') {
-        data.SCHED = v;
-
-      } else {
-        return;
-      }
-
-      if (!packet.retain) {
-        lastLive = Date.now();
-      }
-
+      if (key === 'T1') { var n = parseFloat(v); data.T = isNaN(n) ? null : n; }
+      else if ((m = /^L([1-4])$/.exec(key))) data.L[m[1] - 1] = v;
+      else if ((m = /^P([1-4])$/.exec(key))) data.P[m[1] - 1] = v;
+      else if ((m = /^F([1-2])$/.exec(key))) data.F[m[1] - 1] = v;
+      else if (key === 'W1') data.W = v;
+      else if (key === 'AC') data.AC = v;
+      else if ((m = /^M(L[1-4]|F1|F2|W1|AC)$/.exec(key))) data.M[m[1]] = v;
+      else if (key === 'TIME') data.TIME = v;
+      else if (key === 'SCHED') data.SCHED = v;
+      else return;
+      if (!packet.retain) lastLive = Date.now();
       render();
       updateNotice();
     });
   }
 
-  // ĐẶT LỊCH ĐIỀU HÒA
-
   ['#schedFrom', '#schedTo'].forEach(function (s) {
-    $(s).addEventListener('input', function () {
-      schedEditing = true;
-    });
+    $(s).addEventListener('input', function () { schedEditing = true; });
   });
-
   $('#schedSave').addEventListener('click', function () {
-    var a = $('#schedFrom').value;
-    var b = $('#schedTo').value;
-
-    if (!a || !b) {
-      toast('Hãy chọn đủ giờ bật và giờ tắt.');
-      return;
-    }
-
-    if (a === b) {
-      toast('Giờ bật và giờ tắt đang giống nhau.');
-      return;
-    }
-
-    if (!client || !client.connected) {
-      toast('Chưa kết nối broker, chưa gửi được lịch.');
-      return;
-    }
-
+    var a = $('#schedFrom').value, b = $('#schedTo').value;
+    if (!a || !b) { toast('Hãy chọn đủ giờ bật và giờ tắt.'); return; }
+    if (a === b) { toast('Giờ bật và giờ tắt đang giống nhau.'); return; }
+    if (!client || !client.connected) { toast('Chưa kết nối broker, chưa gửi được lịch.'); return; }
     client.publish(base + '/cmd/SCHED', a + '-' + b);
-
     schedEditing = false;
-
     toast('Đã gửi lịch: bật ' + a + ', tắt ' + b);
   });
 
-  // CÀI ĐẶT BAN ĐẦU
-
-  $('#baseIn').value = base;
-  $('#brokerIn').value = broker;
+  function setModalOpen(open) {
+    $('#settingsBackdrop').classList.toggle('open', open);
+    $('#gear').setAttribute('aria-expanded', open);
+    if (open) {
+      $('#baseIn').value = base;
+      $('#brokerIn').value = broker;
+      $('#baseIn').focus();
+    }
+  }
 
   $('#gear').addEventListener('click', function () {
-    var open = $('#settings').classList.toggle('open');
-
-    this.setAttribute('aria-expanded', open);
+    setModalOpen(!$('#settingsBackdrop').classList.contains('open'));
   });
-
-  // LƯU CÀI ĐẶT VÀ KẾT NỐI LẠI
+  $('#closeSettings').addEventListener('click', function () { setModalOpen(false); });
+  $('#settingsBackdrop').addEventListener('click', function (e) {
+    if (e.target === $('#settingsBackdrop')) setModalOpen(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && $('#settingsBackdrop').classList.contains('open')) setModalOpen(false);
+  });
 
   $('#saveBtn').addEventListener('click', function () {
     var b = $('#baseIn').value.trim().replace(/\/+$/, '');
     var u = $('#brokerIn').value.trim();
-
-    if (!b || !u) {
-      toast('Hãy điền đủ tiền tố topic và địa chỉ broker.');
-      return;
-    }
-
-    base = b;
-    broker = u;
-
-    store.set('base', base);
-    store.set('broker', broker);
-
-    resetData();
-    lastLive = 0;
-
-    render();
+    if (!b || !u) { toast('Hãy điền đủ tiền tố topic và địa chỉ broker.'); return; }
+    base = b; broker = u;
+    store.set('base', base); store.set('broker', broker);
+    setModalOpen(false);
+    resetData(); lastLive = 0; render();
     connect();
-
     toast('Đã lưu, đang kết nối lại.');
   });
 
-  // KHỞI ĐỘNG WEBSITE
-
   setInterval(updateNotice, 1000);
-
   render();
   connect();
-
 })();
 </script>
-
 </body>
 </html>
-
-</style>
