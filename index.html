@@ -1,722 +1,887 @@
-
-:root {
-  --bg: #f1f5f9;
-  --surface: #ffffff;
-  --surface-soft: #f8fafc;
-  --primary: #172d42;
-  --primary-light: #28445e;
-  --text: #172b3a;
-  --muted: #718096;
-  --border: #e2e8f0;
-  --green: #0d9488;
-  --green-soft: #ccfbf1;
-  --yellow: #d97706;
-  --yellow-soft: #fef3c7;
-  --red: #dc4c4c;
-  --red-soft: #fee2e2;
-  --blue: #3182ce;
-  --blue-soft: #dbeafe;
-  --shadow: 0 4px 18px rgba(31, 50, 70, .055);
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", system-ui, Arial, sans-serif;
-  line-height: 1.45;
-}
-
-.wrap {
-  max-width: 1500px;
-  margin: auto;
-  padding: 22px 24px 32px;
-}
-
-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-h1 {
-  flex: 1;
-  margin: 0;
-  font-size: 1.65rem;
-  font-weight: 750;
-  letter-spacing: -.5px;
-  color: var(--primary);
-}
-
-button {
-  font: inherit;
-  cursor: pointer;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 13px;
-  border-radius: 30px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-size: .85rem;
-  font-weight: 600;
-}
-
-.dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--yellow);
-}
-
-.pill.on .dot {
-  background: var(--green);
-  box-shadow: 0 0 0 4px var(--green-soft);
-}
-
-.pill.wait .dot {
-  background: var(--yellow);
-}
-
-.pill.off .dot {
-  background: var(--red);
-}
-
-.ghost {
-  min-height: 38px;
-  padding: 0 16px;
-  border-radius: 9px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--primary);
-  font-weight: 600;
-  transition: .2s;
-}
-
-.ghost:hover {
-  background: var(--primary);
-  color: white;
-}
-
-:focus-visible {
-  outline: 3px solid var(--green);
-  outline-offset: 2px;
-}
-
-/* CÀI ĐẶT */
-
-#settings {
-  display: none;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 13px;
-  padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: var(--shadow);
-}
-
-#settings.open {
-  display: block;
-}
-
-#settings label {
-  display: block;
-  margin: 9px 0 5px;
-  color: var(--muted);
-  font-size: .85rem;
-}
-
-#settings input {
-  width: 100%;
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  color: var(--text);
-  font: inherit;
-}
-
-#settings .row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-#settings .save {
-  min-height: 40px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 9px;
-  background: var(--primary);
-  color: white;
-  font-weight: 650;
-}
-
-#settings small {
-  color: var(--muted);
-}
-
-/* THÔNG BÁO */
-
-#notice {
-  display: none;
-  margin-bottom: 14px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: var(--yellow-soft);
-  border: 1px solid #f3d58a;
-  color: #87520b;
-  font-size: .85rem;
-}
-
-#notice.show {
-  display: block;
-}
-
-/* BỐ CỤC CHÍNH */
-
-.layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
-.stack {
-  display: grid;
-  gap: 16px;
-  min-width: 0;
-}
-
-/* CARD */
-
-.panel {
-  min-width: 0;
-  padding: 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  box-shadow: var(--shadow);
-}
-
-h2 {
-  margin: 0 0 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-  color: var(--primary);
-  font-size: 1rem;
-  font-weight: 750;
-}
-
-/* SƠ ĐỒ NGÔI NHÀ */
-
-.panel svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin: 0 auto;
-}
-
-.wall {
-  fill: none;
-  stroke: var(--primary);
-  stroke-width: 3;
-}
-
-.gap {
-  fill: var(--surface);
-}
-
-.halo {
-  fill: var(--yellow);
-  opacity: 0;
-  transition: opacity .25s;
-}
-
-.core {
-  fill: #dce5e8;
-  stroke: #64748b;
-  stroke-width: 1.5;
-  transition: fill .25s;
-}
-
-.lamp.on .halo {
-  opacity: .45;
-}
-
-.lamp.on .core {
-  fill: var(--yellow);
-  stroke: var(--yellow);
-}
-
-.ring {
-  fill: none;
-  stroke: var(--green);
-  stroke-width: 2.5;
-  stroke-dasharray: 5 4;
-  opacity: 0;
-}
-
-.lamp.here .ring {
-  opacity: 1;
-}
-
-.tag {
-  font-size: 11px;
-  fill: var(--muted);
-  text-anchor: middle;
-}
-
-.temp {
-  font-size: 34px;
-  font-weight: 800;
-  text-anchor: middle;
-  fill: var(--primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.temp.warm {
-  fill: var(--yellow);
-}
-
-.temp.hot {
-  fill: var(--red);
-}
-
-.unit {
-  font-size: 12px;
-  fill: var(--muted);
-  text-anchor: middle;
-}
-
-.acbox rect {
-  fill: #dce5e8;
-  stroke: #64748b;
-  stroke-width: 1.5;
-}
-
-.acbox line {
-  stroke: #64748b;
-  stroke-width: 1.5;
-}
-
-.acbox.on rect {
-  fill: #bfdbfe;
-  stroke: var(--blue);
-}
-
-.acbox.on line {
-  stroke: var(--blue);
-}
-
-/* THẺ TRẠNG THÁI */
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 12px;
-}
-
-.chip {
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--surface-soft);
-  border: 1px solid var(--border);
-  font-size: .8rem;
-  font-weight: 600;
-}
-
-.chip.run {
-  background: var(--green-soft);
-  border-color: #99e5d8;
-  color: #08786d;
-}
-
-.chip.cool {
-  background: var(--blue-soft);
-  border-color: #b8d5fb;
-  color: #2563a6;
-}
-
-.chip.alert {
-  background: var(--red-soft);
-  border-color: #f4b6b6;
-  color: #b42323;
-}
-
-.hint {
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: .8rem;
-  line-height: 1.5;
-}
-
-/* ĐIỀU KHIỂN THIẾT BỊ */
-
-.row-dev {
-  padding: 12px 0;
-  border-top: 1px solid var(--border);
-}
-
-.row-dev:first-of-type {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.row-dev .top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.row-dev b {
-  color: var(--primary);
-  font-size: .9rem;
-}
-
-.row-dev .info {
-  color: var(--muted);
-  font-size: .78rem;
-  text-align: right;
-}
-
-/* NÚT 3 CHẾ ĐỘ */
-
-.seg {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-soft);
-}
-
-.seg button {
-  min-height: 36px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--muted);
-  font-size: .82rem;
-  font-weight: 600;
-  transition: .2s;
-}
-
-.seg button:hover {
-  background: #e9eff5;
-  color: var(--primary);
-}
-
-.seg button.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: 0 2px 5px rgba(23, 45, 66, .15);
-}
-
-/* LỊCH ĐIỀU HÒA */
-
-.sched {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-.sched .lbl {
-  margin-bottom: 10px;
-  color: var(--primary-light);
-  font-size: .83rem;
-  font-weight: 600;
-}
-
-.sched .times {
-  display: flex;
-  align-items: end;
-  flex-wrap: wrap;
-  gap: 9px;
-}
-
-.sched label {
-  display: grid;
-  gap: 4px;
-  color: var(--muted);
-  font-size: .78rem;
-}
-
-.sched input[type="time"] {
-  min-height: 37px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  color: var(--text);
-  font: inherit;
-}
-
-.sched .go {
-  min-height: 37px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--green);
-  color: white;
-  font-weight: 650;
-  font-size: .82rem;
-  transition: .2s;
-}
-
-.sched .go:hover {
-  background: #08786d;
-}
-
-/* THÔNG BÁO NHANH */
-
-#toast {
-  position: fixed;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  padding: 11px 18px;
-  max-width: 90vw;
-  border-radius: 10px;
-  background: var(--primary);
-  color: white;
-  font-size: .85rem;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, .15);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s;
-  z-index: 30;
-}
-
-#toast.show {
-  opacity: 1;
-}
-
-/* MÀN HÌNH MÁY TÍNH */
-
-@media (min-width: 1050px) {
-  html,
-  body {
-    height: 100%;
-    min-height: 100vh;
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nhà thông minh</title>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+
+<style>
+:root{
+  --bg:#f3f6fa;--surface:#fff;--surface-2:#f8fafc;--ink:#172b4d;
+  --muted:#718096;--line:#e5eaf1;--primary:#2563eb;--primary-soft:#eff6ff;
+  --teal:#0f9b8e;--teal-soft:#e6f7f4;--amber:#d97706;--amber-soft:#fff7e6;
+  --red:#dc4c4c;--red-soft:#fff0f0;--blue-soft:#eaf2ff;
+  --shadow:0 5px 20px rgba(25,42,70,.055);
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;line-height:1.45}
+button,input{font:inherit}
+button{cursor:pointer}
+.wrap{width:min(1500px,100%);margin:0 auto;padding:22px 26px 28px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px;flex:1;min-width:230px}
+.brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:var(--ink);color:#fff;font-size:21px;font-weight:800;box-shadow:0 5px 12px #172b4d22}
+h1{margin:0;font-size:1.45rem;line-height:1.15;font-weight:760;letter-spacing:-.035em}
+.subtitle{margin-top:4px;color:var(--muted);font-size:.78rem;letter-spacing:.015em}
+.header-actions{display:flex;align-items:center;gap:9px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:.8rem;font-weight:650;color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--amber)}
+.pill.on .dot{background:var(--teal);box-shadow:0 0 0 4px var(--teal-soft)}
+.pill.wait .dot{background:var(--amber)}
+.pill.off .dot{background:var(--red)}
+.ghost{min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-size:.82rem;font-weight:650;transition:.18s}
+.ghost:hover{border-color:#b7c7dc;background:var(--primary-soft);color:var(--primary)}
+:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+
+#settings{display:none;margin-bottom:14px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
+#settings.open{display:block}
+#settings label{display:block;margin:8px 0 5px;color:var(--muted);font-size:.8rem;font-weight:600}
+#settings input{width:100%;min-height:40px;padding:0 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink)}
+#settings .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+#settings .save{min-height:39px;padding:0 16px;border:0;border-radius:9px;background:var(--ink);color:#fff;font-size:.82rem;font-weight:650}
+#settings small{color:var(--muted);font-size:.76rem}
+
+#notice{display:none;margin-bottom:14px;padding:10px 13px;border:1px solid #f2d28d;border-radius:11px;background:var(--amber-soft);color:#8a570b;font-size:.81rem}
+#notice.show{display:block}
+
+.layout{display:grid;grid-template-columns:minmax(250px,.92fr) minmax(350px,1.18fr) minmax(280px,.95fr);gap:14px;align-items:stretch}
+.stack{display:grid;grid-template-rows:1fr 1fr;gap:14px;min-width:0;min-height:0}
+.panel{min-width:0;padding:17px 17px 15px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:var(--shadow)}
+h2{display:flex;align-items:center;gap:9px;margin:0 0 13px;padding-bottom:11px;border-bottom:1px solid var(--line);font-size:.93rem;font-weight:750;letter-spacing:-.01em}
+.section-icon{width:27px;height:27px;display:inline-grid;place-items:center;border-radius:8px;background:var(--primary-soft);color:var(--primary);font-size:.9rem}
+
+.panel svg{display:block;width:100%;height:auto;max-width:390px;margin:0 auto}
+.wall{fill:none;stroke:#334b68;stroke-width:3}
+.gap{fill:var(--surface)}
+.halo{fill:#f6b93b;opacity:0;transition:opacity .25s}
+.core{fill:#e2e8f0;stroke:#8090a4;stroke-width:1.5;transition:fill .25s}
+.lamp.on .halo{opacity:.45}
+.lamp.on .core{fill:#f6c453;stroke:#d99b20}
+.ring{fill:none;stroke:var(--teal);stroke-width:2.5;stroke-dasharray:5 4;opacity:0}
+.lamp.here .ring{opacity:1}
+.tag{font-size:11px;fill:var(--muted);text-anchor:middle}
+.temp{font-size:34px;font-weight:800;text-anchor:middle;fill:var(--ink);font-variant-numeric:tabular-nums}
+.temp.warm{fill:var(--amber)}.temp.hot{fill:var(--red)}
+.unit{font-size:12px;fill:var(--muted);text-anchor:middle}
+.acbox rect{fill:#e2e8f0;stroke:#8090a4;stroke-width:1.5;transition:fill .2s}
+.acbox line{stroke:#8090a4;stroke-width:1.5}
+.acbox.on rect{fill:#bfdbfe;stroke:var(--primary)}
+.acbox.on line{stroke:var(--primary)}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.chip{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:#52647b;font-size:.74rem;font-weight:650}
+.chip.run{border-color:#b7e8df;background:var(--teal-soft);color:#08796e}
+.chip.cool{border-color:#c9dcff;background:var(--blue-soft);color:#245bb0}
+.chip.alert{border-color:#f4c4c4;background:var(--red-soft);color:#b42323}
+.hint{margin:10px 0 0;color:var(--muted);font-size:.75rem;line-height:1.5}
+
+.row-dev{padding:10px 0;border-top:1px solid #edf0f5}
+.row-dev:first-of-type{padding-top:0;border-top:0}
+.row-dev .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.row-dev b{color:var(--ink);font-size:.83rem;font-weight:700}
+.row-dev .info{color:var(--muted);font-size:.72rem;text-align:right}
+
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:3px;border:1px solid var(--line);border-radius:10px;background:#f5f7fb}
+.seg button{min-height:34px;border:0;border-radius:7px;background:transparent;color:#64748b;font-size:.76rem;font-weight:650;transition:.16s}
+.seg button:hover{background:#e8eef8;color:var(--ink)}
+.seg button.active{background:var(--ink);color:#fff;box-shadow:0 2px 5px #172b4d20}
+
+.sched{margin-top:10px;padding-top:11px;border-top:1px solid var(--line)}
+.sched .lbl{margin-bottom:8px;color:#425875;font-size:.77rem;font-weight:650}
+.sched .times{display:flex;align-items:end;flex-wrap:wrap;gap:7px}
+.sched label{display:grid;gap:4px;color:var(--muted);font-size:.72rem;font-weight:600}
+.sched input[type=time]{width:100%;min-height:34px;padding:0 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);font-size:.78rem}
+.sched .go{min-height:34px;padding:0 13px;border:0;border-radius:8px;background:var(--primary);color:#fff;font-size:.76rem;font-weight:700;transition:.18s}
+.sched .go:hover{background:#1d4ed8}
+
+#toast{position:fixed;left:50%;bottom:22px;z-index:30;max-width:90vw;padding:11px 16px;transform:translateX(-50%);border-radius:10px;background:var(--ink);color:#fff;font-size:.82rem;box-shadow:0 8px 24px #172b4d30;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+
+@media(min-width:1200px) and (min-height:760px){
+  .wrap{height:100vh;display:flex;flex-direction:column;gap:0;overflow:hidden}
+  header,#notice,#settings{flex-shrink:0}
+  .layout{flex:1;min-height:0}
+  .panel{min-height:0;overflow:auto}
+  .stack .panel{overflow:auto}
+  .panel svg{max-height:43vh;width:auto;max-width:100%}
+}
+@media(max-width:1199px){
+  .wrap{padding:18px}
+  .layout{grid-template-columns:minmax(230px,.9fr) minmax(320px,1.1fr)}
+  .stack{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}
+}
+@media(max-width:700px){
+  .wrap{padding:12px}
+  header{gap:10px}
+  .brand{flex-basis:100%}
+  h1{font-size:1.25rem}
+  .header-actions{width:100%;justify-content:space-between}
+  .layout,.stack{grid-template-columns:1fr}
+  .stack{grid-column:auto}
+  .panel{padding:14px}
+  .panel svg{max-width:330px}
+  .row-dev .info{font-size:.69rem}
+  .seg button{min-height:39px}
+  .sched .times{align-items:stretch}
+  .sched label{flex:1;min-width:105px}
+  .sched .go{align-self:end}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">⌂</div>
+      <div>
+        <h1>Smart Home</h1>
+        <div class="subtitle">HỆ THỐNG GIÁM SÁT VÀ ĐIỀU KHIỂN NHÀ THÔNG MINH</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <span class="pill wait" id="conn">
+        <span class="dot"></span>
+        <span id="connText">Đang kết nối…</span>
+      </span>
+      <button class="ghost" id="gear" aria-expanded="false" aria-controls="settings">
+        ⚙ Cài đặt
+      </button>
+    </div>
+  </header>
+
+  <section id="settings">
+    <label for="baseIn">Tiền tố topic (phải giống BASE trong bridge.py)</label>
+    <input id="baseIn" autocomplete="off" spellcheck="false">
+
+    <label for="brokerIn">Địa chỉ broker (WebSocket)</label>
+    <input id="brokerIn" autocomplete="off" spellcheck="false">
+
+    <div class="row">
+      <button class="save" id="saveBtn">Lưu và kết nối lại</button>
+      <small>Broker công cộng ai cũng đọc được topic, hãy đặt tiền tố riêng của bạn.</small>
+    </div>
+  </section>
+
+  <div id="notice" role="status"></div>
+
+  <div class="layout">
+
+    <!-- TỔNG QUAN NGÔI NHÀ -->
+    <section class="panel">
+      <h2>
+        <span class="section-icon">⌂</span>
+        Tổng quan ngôi nhà
+      </h2>
+
+      <svg viewBox="0 0 320 240" role="img"
+        aria-label="Mặt bằng nhà với 4 cửa, mỗi cửa có một đèn và cảm biến người, và một điều hòa">
+
+        <rect class="wall" x="40" y="30" width="240" height="180" rx="6"/>
+        <rect class="gap" x="142" y="26" width="36" height="8"/>
+        <rect class="gap" x="142" y="206" width="36" height="8"/>
+        <rect class="gap" x="36" y="102" width="8" height="36"/>
+        <rect class="gap" x="276" y="102" width="8" height="36"/>
+
+        <g class="lamp" id="lamp0" transform="translate(160 54)">
+          <circle class="halo" r="32"/>
+          <circle class="ring" r="17"/>
+          <circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="160" y="84">Cửa 1</text>
+
+        <g class="lamp" id="lamp1" transform="translate(256 120)">
+          <circle class="halo" r="32"/>
+          <circle class="ring" r="17"/>
+          <circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="256" y="150">Cửa 2</text>
+
+        <g class="lamp" id="lamp2" transform="translate(160 186)">
+          <circle class="halo" r="32"/>
+          <circle class="ring" r="17"/>
+          <circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="160" y="170">Cửa 3</text>
+
+        <g class="lamp" id="lamp3" transform="translate(64 120)">
+          <circle class="halo" r="32"/>
+          <circle class="ring" r="17"/>
+          <circle class="core" r="9"/>
+        </g>
+        <text class="tag" x="64" y="150">Cửa 4</text>
+
+        <g class="acbox" id="acUnit">
+          <rect x="62" y="42" width="54" height="16" rx="4"/>
+          <line x1="70" y1="51" x2="108" y2="51"/>
+        </g>
+        <text class="tag" x="89" y="74">Điều hòa</text>
+
+        <text class="temp" id="temp" x="160" y="125">--</text>
+        <text class="unit" x="160" y="142">nhiệt độ trong nhà (°C)</text>
+      </svg>
+
+      <div class="chips">
+        <span class="chip" id="chipF1">Quạt 1: --</span>
+        <span class="chip" id="chipF2">Quạt 2: --</span>
+        <span class="chip" id="chipW1">Cảnh báo: --</span>
+        <span class="chip" id="chipAC">Điều hòa: --</span>
+        <span class="chip" id="chipTime">Giờ nhà: --:--</span>
+      </div>
+
+      <p class="hint">
+        Vòng nét đứt màu xanh nghĩa là cảm biến ở cửa đó đang thấy có người.
+      </p>
+    </section>
+
+    <!-- ĐIỀU KHIỂN ĐÈN -->
+    <section class="panel">
+      <h2>
+        <span class="section-icon">☼</span>
+        Điều khiển đèn
+      </h2>
+
+      <div id="lamps"></div>
+
+      <p class="hint">
+        “Tự động”: đèn bật khi cảm biến ở cửa thấy người và tắt sau 10 giây khi hết người.
+      </p>
+    </section>
+
+    <!-- QUẠT VÀ ĐIỀU HÒA -->
+    <div class="stack">
+
+      <section class="panel">
+        <h2>
+          <span class="section-icon">✣</span>
+          Quạt và cảnh báo
+        </h2>
+
+        <div id="autos"></div>
+
+        <p class="hint">
+          “Tự động” để thiết bị chạy theo nhiệt độ. Khi nhiệt độ từ 35°C trở lên,
+          quạt và cảnh báo tự bật dù đang để Tắt.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>
+          <span class="section-icon">❄</span>
+          Điều hòa
+        </h2>
+
+        <div id="acrow"></div>
+
+        <div class="sched">
+          <div class="lbl" id="schedLabel">Lịch: chưa có dữ liệu</div>
+
+          <div class="times">
+            <label>
+              Bật lúc
+              <input type="time" id="schedFrom" value="22:00">
+            </label>
+
+            <label>
+              Tắt lúc
+              <input type="time" id="schedTo" value="06:00">
+            </label>
+
+            <button class="go" id="schedSave">Đặt lịch</button>
+          </div>
+
+          <p class="hint">
+            Ở chế độ “Theo lịch”, điều hòa tự bật và tắt mỗi ngày
+            theo giờ thực của máy chạy bridge.py.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+
+  <script>
+(function () {
+  var $ = function (s) {
+    return document.querySelector(s);
+  };
+
+  var store = {
+    get: function (k, d) {
+      try {
+        return localStorage.getItem(k) || d;
+      } catch (e) {
+        return d;
+      }
+    },
+    set: function (k, v) {
+      try {
+        localStorage.setItem(k, v);
+      } catch (e) {}
+    }
+  };
+
+  var base = store.get('base', 'smarthome/kiet01');
+  var broker = store.get('broker', 'wss://broker.hivemq.com:8884/mqtt');
+  var client = null;
+  var conn = 'wait';
+  var lastLive = 0;
+  var schedEditing = false;
+
+  var data;
+
+  function resetData() {
+    data = {
+      T: null,
+      L: [null, null, null, null],
+      P: [null, null, null, null],
+      F: [null, null],
+      W: null,
+      AC: null,
+      M: {
+        L1: null, L2: null, L3: null, L4: null,
+        F1: null, F2: null, W1: null, AC: null
+      },
+      TIME: null,
+      SCHED: null
+    };
   }
 
-  .wrap {
-    height: 100vh;
-    padding: 14px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    overflow: hidden;
+  resetData();
+
+  var AUTOS = [
+    { id: 'F1', name: 'Quạt 1' },
+    { id: 'F2', name: 'Quạt 2' },
+    { id: 'W1', name: 'Đèn cảnh báo' }
+  ];
+
+  function segHtml(id, labels) {
+    var h = '<div class="seg" role="group" aria-label="' + id + '">';
+
+    labels.forEach(function (l) {
+      h += '<button data-dev="' + id + '" data-v="' + l[0] + '">' + l[1] + '</button>';
+    });
+
+    return h + '</div>';
   }
 
-  header {
-    margin: 0;
-    flex-shrink: 0;
+  function rowHtml(id, title, labels) {
+    return '<div class="row-dev">' +
+      '<div class="top">' +
+      '<b>' + title + '</b>' +
+      '<span class="info" id="info-' + id + '">Chưa có dữ liệu</span>' +
+      '</div>' +
+      segHtml(id, labels) +
+      '</div>';
   }
 
-  h1 {
-    font-size: 1.4rem;
+  // TẠO 4 HÀNG ĐIỀU KHIỂN ĐÈN
+
+  var html = '', i;
+
+  for (i = 1; i <= 4; i++) {
+    html += rowHtml(
+      'L' + i,
+      'Cửa ' + i + ' (L' + i + ')',
+      [
+        ['1', 'Bật'],
+        ['0', 'Tắt'],
+        ['AUTO', 'Tự động']
+      ]
+    );
   }
 
-  .layout {
-    flex: 1;
-    min-height: 0;
-    grid-template-columns:
-      minmax(250px, .95fr)
-      minmax(350px, 1.3fr)
-      minmax(280px, 1fr);
-    gap: 12px;
+  $('#lamps').innerHTML = html;
+
+  // TẠO ĐIỀU KHIỂN QUẠT VÀ CẢNH BÁO
+
+  html = '';
+
+  AUTOS.forEach(function (a) {
+    html += rowHtml(
+      a.id,
+      a.name,
+      [
+        ['1', 'Bật'],
+        ['0', 'Tắt'],
+        ['AUTO', 'Tự động']
+      ]
+    );
+  });
+
+  $('#autos').innerHTML = html;
+
+  // ĐIỀU KHIỂN ĐIỀU HÒA
+
+  $('#acrow').innerHTML = rowHtml(
+    'AC',
+    'Điều hòa (AC)',
+    [
+      ['1', 'Bật'],
+      ['0', 'Tắt'],
+      ['AUTO', 'Theo lịch']
+    ]
+  );
+
+  // XỬ LÝ NÚT ĐIỀU KHIỂN
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-dev]');
+
+    if (b) {
+      send(b.dataset.dev, b.dataset.v);
+    }
+  });
+
+  // THÔNG BÁO
+
+  function toast(msg) {
+    var t = $('#toast');
+
+    t.textContent = msg;
+    t.classList.add('show');
+
+    clearTimeout(toast.t);
+
+    toast.t = setTimeout(function () {
+      t.classList.remove('show');
+    }, 2200);
   }
 
-  .stack {
-    grid-template-rows: 1fr 1fr;
-    min-height: 0;
-    height: 100%;
-    gap: 12px;
+  function nameOf(dev) {
+    if (dev[0] === 'L') return 'Cửa ' + dev[1];
+    if (dev === 'F1') return 'Quạt 1';
+    if (dev === 'F2') return 'Quạt 2';
+    if (dev === 'W1') return 'Đèn cảnh báo';
+
+    return 'Điều hòa';
   }
 
-  .panel {
-    padding: 14px;
-    min-height: 0;
-    overflow: auto;
+  // GỬI LỆNH MQTT
+
+  function send(dev, v) {
+    if (!client || !client.connected) {
+      toast('Chưa kết nối broker, chưa gửi được lệnh.');
+      return;
+    }
+
+    client.publish(base + '/cmd/' + dev, v);
+
+    data.M[dev] = (v === 'AUTO') ? 'A' : v;
+
+    if (dev[0] === 'L' && v !== 'AUTO') {
+      data.L[+dev[1] - 1] = v;
+    }
+
+    render();
+
+    toast(
+      'Đã gửi: ' + nameOf(dev) + ' → ' +
+      (v === '1' ? 'Bật' :
+       v === '0' ? 'Tắt' :
+       (dev === 'AC' ? 'Theo lịch' : 'Tự động'))
+    );
   }
 
-  .panel svg {
-    max-height: 46vh;
-    width: auto;
-    max-width: 100%;
+  // TRẠNG THÁI KẾT NỐI
+
+  function setConn(state, text) {
+    conn = state;
+
+    $('#conn').className = 'pill ' + state;
+    $('#connText').textContent = text;
   }
 
-  .stack .panel {
-    padding: 12px;
+  function onoff(s, on, off) {
+    return s === null ? '--' : (s === '1' ? on : off);
   }
 
-  h2 {
-    font-size: .95rem;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
+  var MODE_TXT = {
+    A: 'tự động',
+    '1': 'bật tay',
+    '0': 'tắt tay'
+  };
+
+  function stateOf(id) {
+    if (id[0] === 'L') return data.L[+id[1] - 1];
+    if (id[0] === 'F') return data.F[+id[1] - 1];
+    if (id === 'W1') return data.W;
+
+    return data.AC;
   }
 
-  .row-dev {
-    padding: 8px 0;
+  function setChip(id, text, cls) {
+    var c = $('#' + id);
+
+    c.textContent = text;
+    c.className = 'chip' + (cls ? ' ' + cls : '');
   }
 
-  .row-dev .top {
-    margin-bottom: 6px;
+  // CẬP NHẬT GIAO DIỆN
+
+  function render() {
+    var t = $('#temp');
+
+    if (data.T === null) {
+      t.textContent = '--';
+      t.setAttribute('class', 'temp');
+    } else {
+      t.textContent = data.T.toFixed(1);
+
+      t.setAttribute(
+        'class',
+        'temp' +
+        (data.T >= 30 ? ' hot' :
+         data.T >= 25 ? ' warm' : '')
+      );
+    }
+
+    // TRẠNG THÁI 4 ĐÈN
+
+    for (var i = 0; i < 4; i++) {
+      var id = 'L' + (i + 1);
+
+      $('#lamp' + i).setAttribute(
+        'class',
+        'lamp' +
+        (data.L[i] === '1' ? ' on' : '') +
+        (data.P[i] === '1' ? ' here' : '')
+      );
+
+      var s = data.L[i];
+      var m = data.M[id];
+
+      var txt = s === null
+        ? 'Chưa có dữ liệu'
+        : (s === '1' ? 'Đèn sáng' : 'Đèn tắt');
+
+      if (data.P[i] === '1') {
+        txt += ' · có người';
+      }
+
+      if (m !== null && s !== null) {
+        txt += ' · ' + (m === 'A' ? 'theo cảm biến' : MODE_TXT[m]);
+      }
+
+      $('#info-' + id).textContent = txt;
+    }
+
+    // ĐIỀU HÒA TRÊN SƠ ĐỒ
+
+    $('#acUnit').setAttribute(
+      'class',
+      'acbox' + (data.AC === '1' ? ' on' : '')
+    );
+
+    // QUẠT VÀ CẢNH BÁO
+
+    ['F1', 'F2', 'W1'].forEach(function (id) {
+      var s = stateOf(id);
+      var m = data.M[id];
+
+      var txt = s === null
+        ? 'Chưa có dữ liệu'
+        : (
+          id === 'W1'
+            ? (s === '1' ? 'Đang cảnh báo' : 'Không cảnh báo')
+            : (s === '1' ? 'Đang chạy' : 'Đang tắt')
+        );
+
+      if (m !== null && s !== null) {
+        txt += ' · ' + MODE_TXT[m];
+      }
+
+      $('#info-' + id).textContent = txt;
+    });
+
+    // TRẠNG THÁI ĐIỀU HÒA
+
+    var acTxt = data.AC === null
+      ? 'Chưa có dữ liệu'
+      : (data.AC === '1' ? 'Đang bật' : 'Đang tắt');
+
+    if (data.M.AC !== null && data.AC !== null) {
+      acTxt += ' · ' +
+        (data.M.AC === 'A' ? 'theo lịch' : MODE_TXT[data.M.AC]);
+    }
+
+    $('#info-AC').textContent = acTxt;
+
+    // ĐÁNH DẤU NÚT ĐANG ĐƯỢC CHỌN
+
+    var btns = document.querySelectorAll('button[data-dev]');
+
+    for (var k = 0; k < btns.length; k++) {
+      var d = btns[k].dataset.dev;
+      var v = btns[k].dataset.v;
+      var m2 = data.M[d];
+
+      var active = (m2 === 'A' && v === 'AUTO') || m2 === v;
+
+      btns[k].classList.toggle('active', !!active);
+    }
+
+    // CẬP NHẬT CÁC THẺ TRẠNG THÁI
+
+    setChip(
+      'chipF1',
+      'Quạt 1: ' + onoff(data.F[0], 'chạy', 'tắt'),
+      data.F[0] === '1' ? 'run' : ''
+    );
+
+    setChip(
+      'chipF2',
+      'Quạt 2: ' + onoff(data.F[1], 'chạy', 'tắt'),
+      data.F[1] === '1' ? 'run' : ''
+    );
+
+    setChip(
+      'chipW1',
+      'Cảnh báo: ' +
+      (data.W === null ? '--' :
+       data.W === '1' ? 'nhiệt độ cao' : 'bình thường'),
+      data.W === '1' ? 'alert' : ''
+    );
+
+    setChip(
+      'chipAC',
+      'Điều hòa: ' + onoff(data.AC, 'bật', 'tắt'),
+      data.AC === '1' ? 'cool' : ''
+    );
+
+    setChip(
+      'chipTime',
+      'Giờ nhà: ' +
+      (data.TIME && data.TIME !== '--:--' ? data.TIME : '--:--'),
+      ''
+    );
+
+    // HIỂN THỊ LỊCH ĐIỀU HÒA
+
+    if (data.SCHED) {
+      var p = data.SCHED.split('-');
+
+      $('#schedLabel').textContent =
+        'Lịch hiện tại: bật lúc ' + p[0] +
+        ', tắt lúc ' + p[1] + ' mỗi ngày';
+
+      if (!schedEditing && p.length === 2) {
+        $('#schedFrom').value = p[0];
+        $('#schedTo').value = p[1];
+      }
+    }
   }
 
-  .row-dev b {
-    font-size: .85rem;
+  // KIỂM TRA DỮ LIỆU MQTT
+
+  function updateNotice() {
+    var n = $('#notice');
+    var live = Date.now() - lastLive < 8000;
+
+    if (conn === 'on' && !live) {
+      n.textContent =
+        'Đã kết nối broker nhưng chưa nhận tín hiệu mới từ nhà. ' +
+        'Kiểm tra bridge.py và Proteus đang chạy, và tiền tố topic khớp với BASE. ' +
+        'Số liệu đang hiển thị có thể là dữ liệu cũ.';
+
+      n.classList.add('show');
+
+    } else if (conn === 'off') {
+      n.textContent =
+        'Mất kết nối tới broker. App sẽ tự thử lại, ' +
+        'hoặc kiểm tra Internet và địa chỉ broker trong Cài đặt.';
+
+      n.classList.add('show');
+
+    } else {
+      n.classList.remove('show');
+    }
   }
 
-  .row-dev .info {
-    font-size: .75rem;
+  // KẾT NỐI MQTT
+
+  function connect() {
+    if (typeof mqtt === 'undefined') {
+      setConn('off', 'Lỗi thư viện');
+
+      $('#notice').textContent =
+        'Không tải được thư viện MQTT. Hãy kiểm tra Internet rồi tải lại trang.';
+
+      $('#notice').classList.add('show');
+      return;
+    }
+
+    if (client) {
+      client.end(true);
+      client = null;
+    }
+
+    setConn('wait', 'Đang kết nối…');
+
+    client = mqtt.connect(broker, {
+      clientId: 'web_' + Math.random().toString(16).slice(2, 10),
+      reconnectPeriod: 3000,
+      connectTimeout: 8000
+    });
+
+    client.on('connect', function () {
+      setConn('on', 'Đã kết nối');
+
+      client.subscribe(base + '/state/#');
+
+      updateNotice();
+    });
+
+    client.on('reconnect', function () {
+      setConn('wait', 'Đang kết nối lại…');
+    });
+
+    client.on('close', function () {
+      setConn('off', 'Mất kết nối');
+      updateNotice();
+    });
+
+    client.on('error', function () {
+      setConn('off', 'Lỗi kết nối');
+      updateNotice();
+    });
+
+    // NHẬN DỮ LIỆU TỪ BROKER
+
+    client.on('message', function (topic, payload, packet) {
+      var key = topic.split('/').pop();
+      var v = payload.toString().trim();
+      var m;
+
+      if (key === 'T1') {
+        var n = parseFloat(v);
+        data.T = isNaN(n) ? null : n;
+
+      } else if ((m = /^L([1-4])$/.exec(key))) {
+        data.L[m[1] - 1] = v;
+
+      } else if ((m = /^P([1-4])$/.exec(key))) {
+        data.P[m[1] - 1] = v;
+
+      } else if ((m = /^F([1-2])$/.exec(key))) {
+        data.F[m[1] - 1] = v;
+
+      } else if (key === 'W1') {
+        data.W = v;
+
+      } else if (key === 'AC') {
+        data.AC = v;
+
+      } else if ((m = /^M(L[1-4]|F1|F2|W1|AC)$/.exec(key))) {
+        data.M[m[1]] = v;
+
+      } else if (key === 'TIME') {
+        data.TIME = v;
+
+      } else if (key === 'SCHED') {
+        data.SCHED = v;
+
+      } else {
+        return;
+      }
+
+      if (!packet.retain) {
+        lastLive = Date.now();
+      }
+
+      render();
+      updateNotice();
+    });
   }
 
-  .seg button {
-    min-height: 32px;
-    font-size: .78rem;
-  }
+  // ĐẶT LỊCH ĐIỀU HÒA
 
-  .chips {
-    gap: 5px;
-  }
+  ['#schedFrom', '#schedTo'].forEach(function (s) {
+    $(s).addEventListener('input', function () {
+      schedEditing = true;
+    });
+  });
 
-  .chip {
-    padding: 5px 8px;
-    font-size: .74rem;
-  }
+  $('#schedSave').addEventListener('click', function () {
+    var a = $('#schedFrom').value;
+    var b = $('#schedTo').value;
 
-  .hint {
-    font-size: .76rem;
-    margin-top: 7px;
-  }
+    if (!a || !b) {
+      toast('Hãy chọn đủ giờ bật và giờ tắt.');
+      return;
+    }
 
-  .sched {
-    margin-top: 8px;
-    padding-top: 8px;
-  }
+    if (a === b) {
+      toast('Giờ bật và giờ tắt đang giống nhau.');
+      return;
+    }
 
-  .sched .lbl {
-    margin-bottom: 6px;
-    font-size: .78rem;
-  }
+    if (!client || !client.connected) {
+      toast('Chưa kết nối broker, chưa gửi được lịch.');
+      return;
+    }
 
-  .sched .times {
-    gap: 6px;
-  }
+    client.publish(base + '/cmd/SCHED', a + '-' + b);
 
-  .sched input[type="time"],
-  .sched .go {
-    min-height: 33px;
-    font-size: .76rem;
-  }
+    schedEditing = false;
 
-  #notice {
-    margin: 0;
-    flex-shrink: 0;
-    padding: 7px 12px;
-    font-size: .8rem;
-  }
+    toast('Đã gửi lịch: bật ' + a + ', tắt ' + b);
+  });
 
-  #settings {
-    margin: 0;
-    flex-shrink: 0;
-  }
-}
+  // CÀI ĐẶT BAN ĐẦU
 
-/* TABLET VÀ ĐIỆN THOẠI */
+  $('#baseIn').value = base;
+  $('#brokerIn').value = broker;
 
-@media (max-width: 1049px) {
-  .wrap {
-    padding: 16px;
-  }
+  $('#gear').addEventListener('click', function () {
+    var open = $('#settings').classList.toggle('open');
 
-  .stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+    this.setAttribute('aria-expanded', open);
+  });
 
-  .stack .panel:last-child {
-    grid-column: 1 / -1;
-  }
-}
+  // LƯU CÀI ĐẶT VÀ KẾT NỐI LẠI
 
-@media (max-width: 600px) {
-  .wrap {
-    padding: 12px;
-  }
+  $('#saveBtn').addEventListener('click', function () {
+    var b = $('#baseIn').value.trim().replace(/\/+$/, '');
+    var u = $('#brokerIn').value.trim();
 
-  header {
-    gap: 8px;
-  }
+    if (!b || !u) {
+      toast('Hãy điền đủ tiền tố topic và địa chỉ broker.');
+      return;
+    }
 
-  h1 {
-    flex-basis: 100%;
-    font-size: 1.35rem;
-  }
+    base = b;
+    broker = u;
 
-  .layout,
-  .stack {
-    grid-template-columns: 1fr;
-  }
+    store.set('base', base);
+    store.set('broker', broker);
 
-  .stack .panel:last-child {
-    grid-column: auto;
-  }
+    resetData();
+    lastLive = 0;
 
-  .panel {
-    padding: 14px;
-  }
+    render();
+    connect();
 
-  .row-dev .info {
-    font-size: .72rem;
-  }
+    toast('Đã lưu, đang kết nối lại.');
+  });
 
-  .seg button {
-    min-height: 40px;
-  }
+  // KHỞI ĐỘNG WEBSITE
 
-  .sched .times {
-    align-items: stretch;
-  }
+  setInterval(updateNotice, 1000);
 
-  .sched label {
-    flex: 1;
-    min-width: 110px;
-  }
+  render();
+  connect();
 
-  .sched input[type="time"] {
-    width: 100%;
-  }
+})();
+</script>
 
-  .sched .go {
-    align-self: end;
-  }
-}
+</body>
+</html>
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition: none !important;
-  }
-}
+</style>
